@@ -1,10 +1,10 @@
-2020.05.09-03:07:11.088-0400 DUMBLEDORE 35926 TRACE trace
+2020.05.09-03:09:34.717-0400 DUMBLEDORE 36203 TRACE trace
 
 {
   value: { value: { value: { value: {} } } }
 }
 
-2020.05.09-03:07:11.114-0400 DUMBLEDORE 35926 ERROR error
+2020.05.09-03:09:34.737-0400 DUMBLEDORE 36203 ERROR error
 
 Error: error
     at /Volumes/DUMBLEDORE1/Users/fficnar/Projects/Shared Projects/mablung-log/source/test/library/log/formatted-log.test.js:17:15
