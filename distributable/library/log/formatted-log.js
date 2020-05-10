@@ -23,8 +23,9 @@ class FormattedLog extends Log {
         'inspect': {
           'depth': null,
           'maxArrayLength': null,
-          'showHidden': true } },
+          'showHidden': true },
 
+        'nestedKey': super.defaultOption.nestedKey },
 
       'prettifier': this.getPrettifier.bind(this) };
 
@@ -43,7 +44,7 @@ class FormattedLog extends Log {
     let nestedData = null;
 
     if (option.nestedKey) {
-      nestedData = data[option.nestedKey];
+      nestedData = data[option.nestedKey] || {};
     } else {
 
       nestedData = Clone(data);
@@ -64,11 +65,11 @@ class FormattedLog extends Log {
     this.formatComputerName(data.hostname),
     data.pid,
     this.formatLevelName(data.level),
-    data[option.messageKey || 'msg'] || '',
+    data[option.messageKey || 'msg'] || nestedData.message || '',
     nestedData.duration ? ` in ${this.formatDuration(nestedData.duration)}` : '');
 
-    if (data.stack) {
-      string += `\n\n${data.stack}\n\n`;
+    if (nestedData.stack) {
+      string += `\n\n${nestedData.stack}\n\n`;
     } else {
 
       delete nestedData.duration;
