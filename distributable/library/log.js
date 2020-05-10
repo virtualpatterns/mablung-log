@@ -45,7 +45,8 @@ class Log {
 
   get defaultOption() {
     return {
-      'level': 'info' };
+      'level': 'info',
+      'nestedKey': 'data' };
 
   }
 

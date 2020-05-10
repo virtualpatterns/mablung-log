@@ -1,3 +1,4 @@
+import Clone from 'clone';
 import { Configuration } from '@virtualpatterns/mablung-configuration';
 import Luxon from 'luxon';
 import Utilities from 'util';
@@ -39,6 +40,23 @@ class FormattedLog extends Log {
 
   format(data, option) {
 
+    let nestedData = null;
+
+    if (option.nestedKey) {
+      nestedData = data[option.nestedKey];
+    } else {
+
+      nestedData = Clone(data);
+
+      delete nestedData.time;
+      delete nestedData.hostname;
+      delete nestedData.pid;
+      delete nestedData.level;
+      delete nestedData[option.messageKey || 'msg'];
+      delete nestedData.v;
+
+    }
+
     let string = '';
     string += Utilities.format(
     '%s %s %s %s %s%s',
@@ -47,24 +65,16 @@ class FormattedLog extends Log {
     data.pid,
     this.formatLevelName(data.level),
     data[option.messageKey || 'msg'] || '',
-    data.duration ? ` in ${this.formatDuration(data.duration)}` : '');
+    nestedData.duration ? ` in ${this.formatDuration(nestedData.duration)}` : '');
 
     if (data.stack) {
       string += `\n\n${data.stack}\n\n`;
     } else {
 
-      let _data = Object.assign({}, data);
+      delete nestedData.duration;
 
-      delete _data.time;
-      delete _data.hostname;
-      delete _data.pid;
-      delete _data.level;
-      delete _data[option.messageKey || 'msg'];
-      delete _data.duration;
-      delete _data.v;
-
-      if (Is.not.emptyObject(_data)) {
-        string += `\n\n${this.formatInspect(_data, option.inspect)}\n\n`;
+      if (Is.not.emptyObject(nestedData)) {
+        string += `\n\n${this.formatInspect(nestedData, option.inspect)}\n\n`;
       } else
       {
         string += '\n';
