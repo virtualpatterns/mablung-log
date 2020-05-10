@@ -313,15 +313,16 @@ Test('Log.detach() when called twice', async test => {
 });
 
 [
-'trace',
-'debug',
-'info',
-'error',
-'warn',
-'fatal'].
-forEach(methodName => {
+// 'trace',
+// 'debug',
+// 'info',
+'error'
+// ,
+// 'warn',
+// 'fatal'
+].forEach(methodName => {
 
-  Test(`Log.${methodName}('${methodName}')`, async test => {
+  Test.only(`Log.${methodName}('${methodName}')`, async test => {
 
     let logPath = `process/log/log-${methodName}.log`;
     await FileSystem.ensureDir(Path.dirname(logPath));
@@ -330,7 +331,7 @@ forEach(methodName => {
 
     try {
 
-      log[methodName](methodName);
+      log[methodName](new Error(methodName)); // (methodName)
 
       await Process.wait(1000);
 
@@ -340,7 +341,7 @@ forEach(methodName => {
       test.is(logContent[0].msg, methodName);
 
     } finally {
-      await FileSystem.remove(logPath);
+      // await FileSystem.remove(logPath)
     }
 
   });

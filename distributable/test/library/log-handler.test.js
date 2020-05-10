@@ -181,7 +181,7 @@ Test('LogHandler.get(target, propertyName, receiver) when propertyName is \'_for
 
 });
 
-Test.only('LogHandler.apply(target, self, parameter) when target fails', async test => {
+Test('LogHandler.apply(target, self, parameter) when target fails', async test => {
 
   let logPath = 'process/log/log-handler-apply-fails.log';
   await FileSystem.ensureDir(Path.dirname(logPath));
@@ -198,10 +198,10 @@ Test.only('LogHandler.apply(target, self, parameter) when target fails', async t
     let logContents = await FileSystem.readAllJson(logPath, { 'encoding': 'utf-8' });
 
     test.is(logContents.length, 2);
-    // test.is(logContents[1].data.message, 'error')
+    test.is(logContents[1].data.message, 'error');
 
   } finally {
-    // await FileSystem.remove(logPath)
+    await FileSystem.remove(logPath);
   }
 
 });
