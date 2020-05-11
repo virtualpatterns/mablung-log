@@ -7,11 +7,11 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch distributable/sandbox/w.js",
+      "name": "Launch distributable/sandbox/t.js",
       "autoAttachChildProcesses": false,
       "internalConsoleOptions": "openOnSessionStart",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/distributable/sandbox/w.js",
+      "program": "${workspaceFolder}/distributable/sandbox/t.js",
       "runtimeArgs": [ "--no-warnings", "--unhandled-rejections=strict" ],
       "skipFiles": [ "<node_internals>/**" ]
     },
