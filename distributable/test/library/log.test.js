@@ -340,7 +340,7 @@ forEach(methodName => {
       test.is(logContent[0].msg, methodName);
 
     } finally {
-      // await FileSystem.remove(logPath)
+      await FileSystem.remove(logPath);
     }
 
   });
