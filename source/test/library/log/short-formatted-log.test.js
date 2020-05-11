@@ -4,7 +4,7 @@ import Test from 'ava'
 
 import { ShortFormattedLog } from '../../../index.js'
 
-Test.failing('new ShortFormattedLog(path, option)', async (test) => {
+Test('new ShortFormattedLog(path, option)', async (test) => {
 
   let logPath = 'process/log/short-formatted-log-constructor.log'
   await FileSystem.ensureDir(Path.dirname(logPath))
@@ -18,6 +18,7 @@ Test.failing('new ShortFormattedLog(path, option)', async (test) => {
   }
 
   test.log(`Manually validate '${logPath}'`)
+  test.pass()
 
 })
 
