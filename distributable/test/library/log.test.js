@@ -331,7 +331,7 @@ Test('Log.detach() when called twice', async test => {
 
     try {
 
-      log[methodName](new Error(methodName)); // (methodName)
+      log[methodName](methodName);
 
       await Process.wait(1000);
 

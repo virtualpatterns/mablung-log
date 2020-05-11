@@ -45,10 +45,9 @@ class Log {
 
   get defaultOption() {
     return {
-      'level': 'info'
-      // ,
-      // 'nestedKey': 'data'
-    };
+      'level': 'info',
+      'nestedKey': 'data' };
+
   }
 
   /* c8 ignore next 3 */
