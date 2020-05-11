@@ -201,7 +201,7 @@ Test('LogHandler.apply(target, self, parameter) when target fails', async test =
     test.is(logContents[1].msg, 'error');
 
   } finally {
-    // await FileSystem.remove(logPath)
+    await FileSystem.remove(logPath);
   }
 
 });
