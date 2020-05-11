@@ -114,7 +114,9 @@ class LogHandler {
   }
 
   _applyException(target, self, parameter, error) {
-    this._log.error(error);
+    // when using nestedKey, pino does not seem to add the message and stack to the nested key
+    // this._log.error(error)
+    this._log.error({ 'stack': error.stack, 'type': error.constructor.name }, error.message);
   }
 
   _getFormattedIn(target, self, parameter) {

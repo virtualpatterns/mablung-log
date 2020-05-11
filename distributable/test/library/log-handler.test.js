@@ -198,7 +198,7 @@ Test('LogHandler.apply(target, self, parameter) when target fails', async test =
     let logContents = await FileSystem.readAllJson(logPath, { 'encoding': 'utf-8' });
 
     test.is(logContents.length, 2);
-    test.is(logContents[1].data.message, 'error');
+    test.is(logContents[1].msg, 'error');
 
   } finally {
     await FileSystem.remove(logPath);
