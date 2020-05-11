@@ -4,7 +4,7 @@ import Test from 'ava';
 
 import { FormattedLog } from '../../../index.js';
 
-Test.failing('new FormattedLog(path, option)', async test => {
+Test('new FormattedLog(path, option)', async test => {
 
   let logPath = 'process/log/formatted-log-constructor.log';
   await FileSystem.ensureDir(Path.dirname(logPath));
@@ -21,6 +21,7 @@ Test.failing('new FormattedLog(path, option)', async test => {
   }
 
   test.log(`Manually validate '${logPath}'`);
+  test.pass();
 
 });
 //# sourceMappingURL=formatted-log.test.js.map

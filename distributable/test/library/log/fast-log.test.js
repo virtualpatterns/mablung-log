@@ -4,7 +4,7 @@ import Test from 'ava';
 
 import { FastLog } from '../../../index.js';
 
-Test.failing('new FastLog(path, option)', async test => {
+Test('new FastLog(path, option)', async test => {
 
   let logPath = 'process/log/fast-log-constructor.log';
   await FileSystem.ensureDir(Path.dirname(logPath));
@@ -18,6 +18,7 @@ Test.failing('new FastLog(path, option)', async test => {
   }
 
   test.log(`Manually validate '${logPath}'`);
+  test.pass();
 
 });
 //# sourceMappingURL=fast-log.test.js.map
