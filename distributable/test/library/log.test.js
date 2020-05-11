@@ -313,16 +313,15 @@ Test('Log.detach() when called twice', async test => {
 });
 
 [
-// 'trace',
-// 'debug',
-// 'info',
-'error'
-// ,
-// 'warn',
-// 'fatal'
-].forEach(methodName => {
+'trace',
+'debug',
+'info',
+'error',
+'warn',
+'fatal'].
+forEach(methodName => {
 
-  Test.only(`Log.${methodName}('${methodName}')`, async test => {
+  Test(`Log.${methodName}('${methodName}')`, async test => {
 
     let logPath = `process/log/log-${methodName}.log`;
     await FileSystem.ensureDir(Path.dirname(logPath));
