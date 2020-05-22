@@ -96,8 +96,8 @@ class Log {
 
       if (option.handleExit) {
 
-        Process.on('exit', this._onExit = this.onImmediate(immediateLog => {
-          immediateLog.trace('Process.on(\'exit\', this._onExit = this.onImmediate((immediateLog) => { ... }))');
+        Process.on('exit', this.__onExit = this.onImmediate(immediateLog => {
+          immediateLog.trace('Process.on(\'exit\', this.__onExit = this.onImmediate((immediateLog) => { ... }))');
 
           try {
             this.detach();
@@ -113,8 +113,8 @@ class Log {
       if (option.handleKillSignal) {
 
         option.handleKillSignal.forEach(signal => {
-          Process.on(signal, this[`_on${signal}`] = this.onImmediate(immediateLog => {
-            immediateLog.trace(`Process.on('${signal}', this._on${signal} = this.onImmediate((immediateLog) => { ... }))`);
+          Process.on(signal, this[`__on${signal}`] = this.onImmediate(immediateLog => {
+            immediateLog.trace(`Process.on('${signal}', this.__on${signal} = this.onImmediate((immediateLog) => { ... }))`);
 
             try {
               this.detach();
@@ -140,8 +140,8 @@ class Log {
       if (option.handleRotate) {
 
         option.handleRotate.forEach(signal => {
-          Process.on(signal, this[`_on${signal}`] = () => {
-            this.trace(`Process.on('${signal}', this._on${signal} = () => { ... })`);
+          Process.on(signal, this[`__on${signal}`] = () => {
+            this.trace(`Process.on('${signal}', this.__on${signal} = () => { ... })`);
 
             try {
               this.rotate();
@@ -169,17 +169,17 @@ class Log {
       let option = this._attachOption;
 
       if (option.handleExit &&
-      this._onExit) {
-        Process.off('exit', this._onExit);
-        delete this._onExit;
+      this.__onExit) {
+        Process.off('exit', this.__onExit);
+        delete this.__onExit;
       }
 
       if (option.handleKillSignal) {
 
         option.handleKillSignal.forEach(signal => {
-          if (this[`_on${signal}`]) {
-            Process.off(signal, this[`_on${signal}`]);
-            delete this[`_on${signal}`];
+          if (this[`__on${signal}`]) {
+            Process.off(signal, this[`__on${signal}`]);
+            delete this[`__on${signal}`];
           }
         });
 
@@ -188,9 +188,9 @@ class Log {
       if (option.handleRotate) {
 
         option.handleRotate.forEach(signal => {
-          if (this[`_on${signal}`]) {
-            Process.off(signal, this[`_on${signal}`]);
-            delete this[`_on${signal}`];
+          if (this[`__on${signal}`]) {
+            Process.off(signal, this[`__on${signal}`]);
+            delete this[`__on${signal}`];
           }
         });
 

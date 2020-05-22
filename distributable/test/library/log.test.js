@@ -64,13 +64,11 @@ Test('Log.attach() on exit', async test => {
   let workerLogPath = `${rootPath}/log-attach-on-exit-worker.log`;
   let logPath = `${rootPath}/log-attach-on-exit.log`;
 
-  let worker = new WorkerClient();
+  let worker = new WorkerClient(Require.resolve('./worker.js'));
 
   try {
 
     worker.writeTo(workerLogPath);
-
-    await worker.import(Require.resolve('./worker.js'));
 
     await worker.module.createLog(logPath, { 'level': 'trace' });
     await worker.module.attach();
@@ -81,7 +79,7 @@ Test('Log.attach() on exit', async test => {
 
     test.is(logContent.length, 3);
 
-    test.is(logContent[1].msg, 'Process.on(\'exit\', this._onExit = this.onImmediate((immediateLog) => { ... }))');
+    test.is(logContent[1].msg, 'Process.on(\'exit\', this.__onExit = this.onImmediate((immediateLog) => { ... }))');
     test.is(logContent[2].msg, 'Log.detach()');
 
   } finally {
@@ -107,13 +105,12 @@ Test('Log.attach() on SIGHUP', async test => {
   let originalLogPath = `${rootPath}/log-attach-on-sighup-original.log`;
   let renamedLogPath = `${rootPath}/log-attach-on-sighup-renamed.log`;
 
-  let worker = new WorkerClient();
+  let worker = new WorkerClient(Require.resolve('./worker.js'));
 
   try {
 
     worker.writeTo(workerLogPath);
 
-    await worker.import(Require.resolve('./worker.js'));
     await worker.module.createPidFile(pidPath);
 
     try {
@@ -144,7 +141,7 @@ Test('Log.attach() on SIGHUP', async test => {
 
           test.is(logContent.length, 3);
           test.is(logContent[1].msg, 'before SIGHUP');
-          test.is(logContent[2].msg, 'Process.on(\'SIGHUP\', this._onSIGHUP = () => { ... })');
+          test.is(logContent[2].msg, 'Process.on(\'SIGHUP\', this.__onSIGHUP = () => { ... })');
 
           logContent = await FileSystem.readAllJson(originalLogPath, { 'encoding': 'utf-8' });
 
@@ -188,13 +185,11 @@ Test('Log.attach() on SIGINT', async test => {
   let workerLogPath = `${rootPath}/log-attach-on-sigint-worker.log`;
   let logPath = `${rootPath}/log-attach-on-sigint.log`;
 
-  let worker = new WorkerClient();
+  let worker = new WorkerClient(Require.resolve('./worker.js'));
 
   try {
 
     worker.writeTo(workerLogPath);
-
-    await worker.import(Require.resolve('./worker.js'));
 
     await worker.module.createPidFile(pidPath);
     await worker.module.createLog(logPath, { 'level': 'trace' });
@@ -211,7 +206,7 @@ Test('Log.attach() on SIGINT', async test => {
 
     test.is(logContent.length, 3);
 
-    test.is(logContent[1].msg, 'Process.on(\'SIGINT\', this._onSIGINT = this.onImmediate((immediateLog) => { ... }))');
+    test.is(logContent[1].msg, 'Process.on(\'SIGINT\', this.__onSIGINT = this.onImmediate((immediateLog) => { ... }))');
     test.is(logContent[2].msg, 'Log.detach()');
 
   } finally {
@@ -255,13 +250,11 @@ Test('Log.detach()', async test => {
   let workerLogPath = `${rootPath}/log-detach-worker.log`;
   let logPath = `${rootPath}/log-detach.log`;
 
-  let worker = new WorkerClient();
+  let worker = new WorkerClient(Require.resolve('./worker.js'));
 
   try {
 
     worker.writeTo(workerLogPath);
-
-    await worker.import(Require.resolve('./worker.js'));
 
     await worker.module.createPidFile(pidPath);
     await worker.module.createLog(logPath, { 'level': 'trace' });
