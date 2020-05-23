@@ -56,7 +56,7 @@ Test('Log.getLevelName(levelNumber)', async test => {
 
 });
 
-Test('Log.attach() on exit', async test => {
+Test.only('Log.attach() on exit', async test => {
 
   let rootPath = 'process/log';
   await FileSystem.ensureDir(rootPath);
@@ -73,7 +73,7 @@ Test('Log.attach() on exit', async test => {
     await worker.module.createLog(logPath, { 'level': 'trace' });
     await worker.module.attach();
 
-    await worker.end();
+    await worker.exit();
 
     let logContent = await FileSystem.readAllJson(logPath, { 'encoding': 'utf-8' });
 
@@ -162,7 +162,7 @@ Test('Log.attach() on SIGHUP', async test => {
 
   } finally {
 
-    await worker.end();
+    await worker.exit();
 
     await Promise.all([
     FileSystem.remove(workerLogPath),
@@ -174,7 +174,7 @@ Test('Log.attach() on SIGHUP', async test => {
 
 });
 
-Test('Log.attach() on SIGINT', async test => {
+Test.only('Log.attach() on SIGINT', async test => {
 
   let rootPath = 'process/log';
   await FileSystem.ensureDir(rootPath);
