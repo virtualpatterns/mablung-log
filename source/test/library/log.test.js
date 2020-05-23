@@ -73,7 +73,7 @@ Test('Log.attach() on exit', async (test) => {
     await worker.module.createLog(logPath, { 'level': 'trace' })
     await worker.module.attach()
 
-    await worker.end()
+    await worker.exit()
 
     let logContent = await FileSystem.readAllJson(logPath, { 'encoding': 'utf-8' })
 
@@ -162,7 +162,7 @@ Test('Log.attach() on SIGHUP', async (test) => {
 
   } finally {
 
-    await worker.end()
+    await worker.exit()
 
     await Promise.all([
       FileSystem.remove(workerLogPath),
