@@ -56,7 +56,7 @@ Test('Log.getLevelName(levelNumber)', async test => {
 
 });
 
-Test.only('Log.attach() on exit', async test => {
+Test('Log.attach() on exit', async test => {
 
   let rootPath = 'process/log';
   await FileSystem.ensureDir(rootPath);
@@ -174,7 +174,7 @@ Test('Log.attach() on SIGHUP', async test => {
 
 });
 
-Test.only('Log.attach() on SIGINT', async test => {
+Test('Log.attach() on SIGINT', async test => {
 
   let rootPath = 'process/log';
   await FileSystem.ensureDir(rootPath);
