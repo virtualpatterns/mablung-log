@@ -1,9 +1,9 @@
 import Clone from 'clone'
 import { Configuration } from '@virtualpatterns/mablung-configuration'
+import { Is } from '@virtualpatterns/mablung-is'
 import Luxon from 'luxon'
 import Utilities from 'util'
 
-import { Is } from '../is.js'
 import { Log } from '../log.js'
 
 const { DateTime } = Luxon

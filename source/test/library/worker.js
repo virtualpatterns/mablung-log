@@ -1,4 +1,4 @@
-import Is from '@pwn/is'
+import { Is } from '@virtualpatterns/mablung-is'
 import { Process } from '@virtualpatterns/mablung-process'
 
 import { Log } from '../../index.js'

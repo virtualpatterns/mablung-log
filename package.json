@@ -79,7 +79,6 @@
     "shx": "^0.3.2"
   },
   "dependencies": {
-    "@pwn/is": "^1.0.2",
     "@virtualpatterns/mablung-configuration": "file:../mablung-configuration",
     "@virtualpatterns/mablung-is": "file:../mablung-is",
     "clone": "^2.1.2",
