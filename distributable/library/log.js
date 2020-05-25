@@ -1,5 +1,5 @@
 import { Configuration } from '@virtualpatterns/mablung-configuration';
-import Is from '@pwn/is';
+import { Is } from '@virtualpatterns/mablung-is';
 import Pino from 'pino';
 
 import { LogDestination } from './log-destination.js';

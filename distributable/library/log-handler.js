@@ -1,7 +1,6 @@
+import { Is } from '@virtualpatterns/mablung-is';
 import Luxon from 'luxon';
 import Utilities from 'util';
-
-import { Is } from './is.js';
 
 const { DateTime } = Luxon;
 const Process = process;

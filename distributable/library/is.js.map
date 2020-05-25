@@ -1,1 +1,0 @@
-{"version":3,"sources":["../../source/library/is.js"],"names":["Bundle","Is","use"],"mappings":"AAAA,SAASA,MAAT,QAAuB,6BAAvB;AACA,OAAOC,EAAP,MAAe,SAAf;;AAEAA,EAAE,CAACC,GAAH,CAAOF,MAAP;;AAEA,SAASC,EAAT","sourcesContent":["import { Bundle } from '@virtualpatterns/mablung-is'\nimport Is from '@pwn/is'\n\nIs.use(Bundle)\n\nexport { Is }"],"file":"is.js"}
