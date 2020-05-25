@@ -47,7 +47,7 @@ class LogHandler {
 
   get(target, propertyName, receiver) {
 
-    let className = target.name || target.constructor.name;
+    // let className = target.name || target.constructor.name
     // this._log.trace(`= LogHandler.get(${className}, ${this._formatPrimitive(propertyName)}, ...)`)
 
     let returnValue = Reflect.get(target, propertyName, receiver);
