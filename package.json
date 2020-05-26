@@ -23,7 +23,7 @@
     ]
   },
   "description": "TBD",
-  "exports": ".distributable/index.js",
+  "exports": "./distributable/index.js",
   "license": "GPL-3.0+",
   "name": "@virtualpatterns/mablung-log",
   "repository": {
