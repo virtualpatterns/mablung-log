@@ -8,6 +8,7 @@ import { LogParameter } from './log-parameter.js';
 
 import { LogAttachedError } from './error/log-attached-error.js';
 import { LogDetachedError } from './error/log-detached-error.js';
+import { LogOptionNotSupportedError } from './error/log-option-not-supported-error.js';
 
 const Process = process;
 
@@ -83,38 +84,19 @@ class Log {
     return this._pinoLog.fatal(...parameter);
   }
 
-  attach(option = {
-    'handleExit': true,
-    'handleKillSignal': ['SIGINT', 'SIGTERM'],
-    'handleRotate': ['SIGHUP'] })
-  {
-    this.trace({ option }, 'Log.attach(option)');
+  attach({ handleExit = true, handleKillSignal = Is.windows() ? false : ['SIGINT', 'SIGTERM'], handleRotate = Is.windows() ? false : ['SIGHUP'] } = {}) {
+    this.trace({ handleExit, handleKillSignal, handleRotate }, 'Log.attach(option)');
 
     if (this._attachOption) {
       throw new LogAttachedError();
     } else {
 
-      if (option.handleExit) {
+      try {
 
-        Process.on('exit', this.__onExit = this.onImmediate(immediateLog => {
-          immediateLog.trace('Process.on(\'exit\', this.__onExit = this.onImmediate((immediateLog) => { ... }))');
+        if (handleExit) {
 
-          try {
-            this.detach();
-            /* c8 ignore next 3 */
-          } catch (error) {
-            immediateLog.error(error);
-          }
-
-        }));
-
-      }
-
-      if (option.handleKillSignal) {
-
-        option.handleKillSignal.forEach(signal => {
-          Process.on(signal, this[`__on${signal}`] = this.onImmediate(immediateLog => {
-            immediateLog.trace(`Process.on('${signal}', this.__on${signal} = this.onImmediate((immediateLog) => { ... }))`);
+          Process.on('exit', this.__onExit = this.onImmediate(immediateLog => {
+            immediateLog.trace('Process.on(\'exit\', this.__onExit = this.onImmediate((immediateLog) => { ... }))');
 
             try {
               this.detach();
@@ -123,39 +105,102 @@ class Log {
               immediateLog.error(error);
             }
 
-            let count = Process.listenerCount(signal);
-
-            /* c8 ignore next 5 */
-            if (count <= 0) {
-              Process.exit();
-            } else {
-              immediateLog.trace(`Process.listenerCount('${signal}') returned ${count}`);
-            }
-
           }));
-        });
 
-      }
+        }
 
-      if (option.handleRotate) {
+        if (handleKillSignal) {
 
-        option.handleRotate.forEach(signal => {
-          Process.on(signal, this[`__on${signal}`] = () => {
-            this.trace(`Process.on('${signal}', this.__on${signal} = () => { ... })`);
+          if (Is.windows()) {
+            throw new LogOptionNotSupportedError('handleKillSignal');
+          } else {
 
-            try {
-              this.rotate();
-              /* c8 ignore next 3 */
-            } catch (error) {
-              this.error(error);
+            handleKillSignal.forEach(signal => {
+              Process.on(signal, this[`__on${signal}`] = this.onImmediate(immediateLog => {
+                immediateLog.trace(`Process.on('${signal}', this.__on${signal} = this.onImmediate((immediateLog) => { ... }))`);
+
+                try {
+                  this.detach();
+                  /* c8 ignore next 3 */
+                } catch (error) {
+                  immediateLog.error(error);
+                }
+
+                let count = Process.listenerCount(signal);
+
+                /* c8 ignore next 5 */
+                if (count <= 0) {
+                  Process.exit();
+                } else {
+                  immediateLog.trace(`Process.listenerCount('${signal}') returned ${count}`);
+                }
+
+              }));
+            });
+
+          }
+
+        }
+
+        if (handleRotate) {
+
+          if (Is.windows()) {
+            throw new LogOptionNotSupportedError('handleRotate');
+          } else {
+
+            handleRotate.forEach(signal => {
+              Process.on(signal, this[`__on${signal}`] = () => {
+                this.trace(`Process.on('${signal}', this.__on${signal} = () => { ... })`);
+
+                try {
+                  this.rotate();
+                  /* c8 ignore next 3 */
+                } catch (error) {
+                  this.error(error);
+                }
+
+              });
+            });
+
+          }
+
+        }
+
+      } catch (error) {
+
+        if (handleExit &&
+        this.__onExit) {
+          Process.off('exit', this.__onExit);
+          delete this.__onExit;
+        }
+
+        if (handleKillSignal) {
+
+          handleKillSignal.forEach(signal => {
+            if (this[`__on${signal}`]) {
+              Process.off(signal, this[`__on${signal}`]);
+              delete this[`__on${signal}`];
             }
-
           });
-        });
+
+        }
+
+        if (handleRotate) {
+
+          handleRotate.forEach(signal => {
+            if (this[`__on${signal}`]) {
+              Process.off(signal, this[`__on${signal}`]);
+              delete this[`__on${signal}`];
+            }
+          });
+
+        }
+
+        throw error;
 
       }
 
-      this._attachOption = option;
+      this._attachOption = { handleExit, handleKillSignal, handleRotate };
 
     }
 
@@ -166,17 +211,17 @@ class Log {
 
     if (this._attachOption) {
 
-      let option = this._attachOption;
+      let { handleExit, handleKillSignal, handleRotate } = this._attachOption;
 
-      if (option.handleExit &&
+      if (handleExit &&
       this.__onExit) {
         Process.off('exit', this.__onExit);
         delete this.__onExit;
       }
 
-      if (option.handleKillSignal) {
+      if (handleKillSignal) {
 
-        option.handleKillSignal.forEach(signal => {
+        handleKillSignal.forEach(signal => {
           if (this[`__on${signal}`]) {
             Process.off(signal, this[`__on${signal}`]);
             delete this[`__on${signal}`];
@@ -185,9 +230,9 @@ class Log {
 
       }
 
-      if (option.handleRotate) {
+      if (handleRotate) {
 
-        option.handleRotate.forEach(signal => {
+        handleRotate.forEach(signal => {
           if (this[`__on${signal}`]) {
             Process.off(signal, this[`__on${signal}`]);
             delete this[`__on${signal}`];
