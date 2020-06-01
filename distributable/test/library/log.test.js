@@ -259,7 +259,7 @@ Test('Log.attach() when called twice', async test => {
 
 });
 
-Test.only('Log.detach() on exit', async test => {
+Test('Log.detach() on exit', async test => {
 
   let rootPath = 'process/log';
   await FileSystem.ensureDir(rootPath);
@@ -287,10 +287,10 @@ Test.only('Log.detach() on exit', async test => {
 
   } finally {
 
-    // await Promise.all([
-    //   FileSystem.remove(workerLogPath),
-    //   FileSystem.remove(logPath)
-    // ]) 
+    await Promise.all([
+    FileSystem.remove(workerLogPath),
+    FileSystem.remove(logPath)]);
+
 
   }
 
