@@ -1,4 +1,5 @@
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
+import { Is } from '@virtualpatterns/mablung-is'
 import Path from 'path'
 import { Process } from '@virtualpatterns/mablung-process'
 import { WorkerClient } from '@virtualpatterns/mablung-worker'
@@ -71,7 +72,7 @@ Test('Log.attach() on exit', async (test) => {
     worker.writeTo(workerLogPath)
 
     await worker.module.createLog(logPath, { 'level': 'trace' })
-    await worker.module.attach()
+    await worker.module.attach({ 'handleExit': true, 'handleKillSignal': false, 'handleRotate': false })
 
     await worker.exit()
 
@@ -93,7 +94,66 @@ Test('Log.attach() on exit', async (test) => {
 
 })
 
-Test('Log.attach() on SIGHUP', async (test) => {
+Test('Log.attach() on SIGINT optionally throws LogOptionNotSupportedError', async (test) => {
+
+  let rootPath = 'process/log'
+  await FileSystem.ensureDir(rootPath)
+
+  let pidPath = 'process/pid/log-attach-on-sigint.pid'
+  await FileSystem.ensureDir(Path.dirname(pidPath))
+
+  let workerLogPath = `${rootPath}/log-attach-on-sigint-worker.log`
+  let logPath = `${rootPath}/log-attach-on-sigint.log`
+
+  let worker = new WorkerClient(Require.resolve('./worker.js'))
+
+  try {
+
+    worker.writeTo(workerLogPath)
+
+    await worker.module.createPidFile(pidPath)
+    await worker.module.createLog(logPath, { 'level': 'trace' })
+
+    if (Is.windows()) {
+
+      try {
+        await test.throwsAsync(worker.module.attach({ 'handleExit': false, 'handleKillSignal': [ 'SIGINT' ], 'handleRotate': false }), { 'instanceOf': Error })
+      } finally {
+        await worker.exit()
+      }
+
+    } else {
+
+      await worker.module.attach({ 'handleExit': false, 'handleKillSignal': [ 'SIGINT' ], 'handleRotate': false })
+    
+      Process.signalPidFile(pidPath, 'SIGINT')
+  
+      let maximumDuration = 5000
+      let pollInterval = maximumDuration / 8
+    
+      await FileSystem.whenNotExists(maximumDuration, pollInterval, pidPath)
+  
+      let logContent = await FileSystem.readAllJson(logPath, { 'encoding': 'utf-8' })
+  
+      test.is(logContent.length, 3)
+  
+      test.is(logContent[1].msg, 'Process.on(\'SIGINT\', this.__onSIGINT = this.onImmediate((immediateLog) => { ... }))')
+      test.is(logContent[2].msg, 'Log.detach()')
+  
+    }
+
+  } finally {
+
+    await Promise.all([
+      FileSystem.remove(workerLogPath),
+      FileSystem.remove(logPath)
+    ]) 
+
+  }
+
+})
+
+Test('Log.attach() on SIGHUP optionally throws LogOptionNotSupportedError', async (test) => {
 
   let rootPath = 'process/log'
   await FileSystem.ensureDir(rootPath)
@@ -116,40 +176,46 @@ Test('Log.attach() on SIGHUP', async (test) => {
     try {
       
       await worker.module.createLog(originalLogPath, { 'level': 'trace' })
-
+    
       try {
 
-        await worker.module.attach()
-
-        try {
-
-          await worker.module.trace('before SIGHUP')
-
-          await FileSystem.move(originalLogPath, renamedLogPath, { 'overwrite': true })
+        if (Is.windows()) {
+          await test.throwsAsync(worker.module.attach({ 'handleExit': false, 'handleKillSignal': false, 'handleRotate': [ 'SIGHUP' ] }), { 'instanceOf': Error })
+        } else {
     
-          Process.signalPidFile(pidPath, 'SIGHUP')
+          await worker.module.attach({ 'handleExit': false, 'handleKillSignal': false, 'handleRotate': [ 'SIGHUP' ] })
 
-          let maximumDuration = 1000
-          let pollInterval = maximumDuration / 4
-        
-          await FileSystem.whenExists(maximumDuration, pollInterval, originalLogPath)
-    
-          await worker.module.trace('after SIGHUP')
-
-          let logContent = null
-          logContent = await FileSystem.readAllJson(renamedLogPath, { 'encoding': 'utf-8' })
+          try {
   
-          test.is(logContent.length, 3)
-          test.is(logContent[1].msg, 'before SIGHUP')
-          test.is(logContent[2].msg, 'Process.on(\'SIGHUP\', this.__onSIGHUP = () => { ... })')
-
-          logContent = await FileSystem.readAllJson(originalLogPath, { 'encoding': 'utf-8' })
-
-          test.is(logContent.length, 1)
-          test.is(logContent[0].msg, 'after SIGHUP')
-
-        } finally {
-          await worker.module.detach()
+            await worker.module.trace('before SIGHUP')
+  
+            await FileSystem.move(originalLogPath, renamedLogPath, { 'overwrite': true })
+      
+            Process.signalPidFile(pidPath, 'SIGHUP')
+  
+            let maximumDuration = 1000
+            let pollInterval = maximumDuration / 4
+          
+            await FileSystem.whenExists(maximumDuration, pollInterval, originalLogPath)
+      
+            await worker.module.trace('after SIGHUP')
+  
+            let logContent = null
+            logContent = await FileSystem.readAllJson(renamedLogPath, { 'encoding': 'utf-8' })
+    
+            test.is(logContent.length, 3)
+            test.is(logContent[1].msg, 'before SIGHUP')
+            test.is(logContent[2].msg, 'Process.on(\'SIGHUP\', this.__onSIGHUP = () => { ... })')
+  
+            logContent = await FileSystem.readAllJson(originalLogPath, { 'encoding': 'utf-8' })
+  
+            test.is(logContent.length, 1)
+            test.is(logContent[0].msg, 'after SIGHUP')
+  
+          } finally {
+            await worker.module.detach()
+          }
+      
         }
   
       } finally {
@@ -168,52 +234,6 @@ Test('Log.attach() on SIGHUP', async (test) => {
       FileSystem.remove(workerLogPath),
       FileSystem.remove(originalLogPath),
       FileSystem.remove(renamedLogPath)
-    ]) 
-
-  }
-
-})
-
-Test('Log.attach() on SIGINT', async (test) => {
-
-  let rootPath = 'process/log'
-  await FileSystem.ensureDir(rootPath)
-
-  let pidPath = 'process/pid/log-attach-on-sigint.pid'
-  await FileSystem.ensureDir(Path.dirname(pidPath))
-
-  let workerLogPath = `${rootPath}/log-attach-on-sigint-worker.log`
-  let logPath = `${rootPath}/log-attach-on-sigint.log`
-
-  let worker = new WorkerClient(Require.resolve('./worker.js'))
-
-  try {
-
-    worker.writeTo(workerLogPath)
-
-    await worker.module.createPidFile(pidPath)
-    await worker.module.createLog(logPath, { 'level': 'trace' })
-    await worker.module.attach()
-    
-    Process.signalPidFile(pidPath, 'SIGINT')
-
-    let maximumDuration = 4000
-    let pollInterval = maximumDuration / 8
-  
-    await FileSystem.whenNotExists(maximumDuration, pollInterval, pidPath)
-
-    let logContent = await FileSystem.readAllJson(logPath, { 'encoding': 'utf-8' })
-
-    test.is(logContent.length, 3)
-
-    test.is(logContent[1].msg, 'Process.on(\'SIGINT\', this.__onSIGINT = this.onImmediate((immediateLog) => { ... }))')
-    test.is(logContent[2].msg, 'Log.detach()')
-
-  } finally {
-
-    await Promise.all([
-      FileSystem.remove(workerLogPath),
-      FileSystem.remove(logPath)
     ]) 
 
   }
