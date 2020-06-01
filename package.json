@@ -47,22 +47,22 @@
     "build:10": "babel source --copy-files --extensions .cjs,.js --keep-file-extension --out-dir distributable --source-maps",
     "build": "run-s --silent clean lint build:*",
     "test:10": "c8 ava",
-    "test:after:10": "git add coverage distributable",
-    "test:after:20": "git commit --message=\"post-test\" --quiet",
-    "test": "run-s --silent build \"test:10 {@}\" test:after:* --",
+    "test": "run-s --silent build \"test:10 {@}\" --",
     "run:10": "node --no-warnings --unhandled-rejections=strict",
     "run": "run-s build \"run:10 {@}\" --",
-    "push:10": "npm version prerelease",
-    "push:20": "git push origin master",
+    "push:10": "git add coverage distributable",
+    "push:20": "git commit --message=\"post-test\" --quiet",
+    "push:30": "npm version prerelease",
+    "push:40": "git push origin master",
     "push": "run-s --silent test push:*"
   },
   "type": "module",
   "version": "0.0.1-11",
   "devDependencies": {
-    "@babel/cli": "^7.8.4",
-    "@babel/core": "^7.9.6",
-    "@babel/plugin-syntax-import-meta": "^7.8.3",
-    "@babel/preset-env": "^7.9.6",
+    "@babel/cli": "^7.10.1",
+    "@babel/core": "^7.10.1",
+    "@babel/plugin-syntax-import-meta": "^7.10.1",
+    "@babel/preset-env": "^7.10.1",
     "@virtualpatterns/mablung-babel-plugin-replace": "file:../mablung-babel-plugin-replace",
     "@virtualpatterns/mablung-file-system": "file:../mablung-file-system",
     "@virtualpatterns/mablung-process": "file:../mablung-process",
@@ -83,6 +83,6 @@
     "@virtualpatterns/mablung-is": "file:../mablung-is",
     "clone": "^2.1.2",
     "luxon": "^1.24.1",
-    "pino": "^6.2.1"
+    "pino": "^6.3.0"
   }
 }
