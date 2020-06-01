@@ -259,13 +259,10 @@ Test('Log.attach() when called twice', async (test) => {
 
 })
 
-Test('Log.detach()', async (test) => {
+Test.only('Log.detach() on exit', async (test) => {
 
   let rootPath = 'process/log'
   await FileSystem.ensureDir(rootPath)
-
-  let pidPath = 'process/pid/log-detach.pid'
-  await FileSystem.ensureDir(Path.dirname(pidPath))
 
   let workerLogPath = `${rootPath}/log-detach-worker.log`
   let logPath = `${rootPath}/log-detach.log`
@@ -276,18 +273,12 @@ Test('Log.detach()', async (test) => {
 
     worker.writeTo(workerLogPath)
 
-    await worker.module.createPidFile(pidPath)
     await worker.module.createLog(logPath, { 'level': 'trace' })
 
     await worker.module.attach()
     await worker.module.detach()
-    
-    Process.signalPidFile(pidPath, 'SIGINT')
 
-    let maximumDuration = 4000
-    let pollInterval = maximumDuration / 8
-  
-    await FileSystem.whenNotExists(maximumDuration, pollInterval, pidPath)
+    await worker.exit()
 
     let logContent = await FileSystem.readAllJson(logPath, { 'encoding': 'utf-8' })
 
@@ -296,10 +287,10 @@ Test('Log.detach()', async (test) => {
 
   } finally {
 
-    await Promise.all([
-      FileSystem.remove(workerLogPath),
-      FileSystem.remove(logPath)
-    ]) 
+    // await Promise.all([
+    //   FileSystem.remove(workerLogPath),
+    //   FileSystem.remove(logPath)
+    // ]) 
 
   }
 
