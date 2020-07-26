@@ -1,5 +1,5 @@
-import { FileSystem } from '@virtualpatterns/mablung-file-system'
-import Path from 'path'
+// import { FileSystem } from '@virtualpatterns/mablung-file-system'
+// import Path from 'path'
 import Test from 'ava'
 
 import { FormattedLog } from '../../../index.js'
@@ -7,7 +7,7 @@ import { FormattedLog } from '../../../index.js'
 Test('new FormattedLog(path, option)', async (test) => {
 
   let logPath = 'process/log/formatted-log-constructor.log'
-  await FileSystem.ensureDir(Path.dirname(logPath))
+  // await FileSystem.ensureDir(Path.dirname(logPath))
 
   let log = new FormattedLog(logPath, { 'level': 'trace' })
 

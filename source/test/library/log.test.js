@@ -1,6 +1,6 @@
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
 import { Is } from '@virtualpatterns/mablung-is'
-import Path from 'path'
+// import Path from 'path'
 import { Process } from '@virtualpatterns/mablung-process'
 import { WorkerClient } from '@virtualpatterns/mablung-worker'
 import Test from 'ava'
@@ -12,7 +12,7 @@ const Require = __require
 Test('new Log(path, option)', async (test) => {
 
   let logPath = 'process/log/log-constructor.log'
-  await FileSystem.ensureDir(Path.dirname(logPath))
+  // await FileSystem.ensureDir(Path.dirname(logPath))
 
   let log = new Log(logPath, { 'level': 'trace' })
 
@@ -34,7 +34,7 @@ Test('new Log(path, option)', async (test) => {
 Test('Log.getLevelName(levelNumber)', async (test) => {
 
   let logPath = 'process/log/log-get-level-name.log'
-  await FileSystem.ensureDir(Path.dirname(logPath))
+  // await FileSystem.ensureDir(Path.dirname(logPath))
 
   let log = new Log(logPath, { 'level': 'trace' })
 
@@ -60,7 +60,7 @@ Test('Log.getLevelName(levelNumber)', async (test) => {
 Test('Log.attach() on exit', async (test) => {
 
   let rootPath = 'process/log'
-  await FileSystem.ensureDir(rootPath)
+  // await FileSystem.ensureDir(rootPath)
 
   let workerLogPath = `${rootPath}/log-attach-on-exit-worker.log`
   let logPath = `${rootPath}/log-attach-on-exit.log`
@@ -97,10 +97,10 @@ Test('Log.attach() on exit', async (test) => {
 Test('Log.attach() on SIGINT optionally throws LogOptionNotSupportedError', async (test) => {
 
   let rootPath = 'process/log'
-  await FileSystem.ensureDir(rootPath)
+  // await FileSystem.ensureDir(rootPath)
 
   let pidPath = 'process/pid/log-attach-on-sigint.pid'
-  await FileSystem.ensureDir(Path.dirname(pidPath))
+  // await FileSystem.ensureDir(Path.dirname(pidPath))
 
   let workerLogPath = `${rootPath}/log-attach-on-sigint-worker.log`
   let logPath = `${rootPath}/log-attach-on-sigint.log`
@@ -156,10 +156,10 @@ Test('Log.attach() on SIGINT optionally throws LogOptionNotSupportedError', asyn
 Test('Log.attach() on SIGHUP optionally throws LogOptionNotSupportedError', async (test) => {
 
   let rootPath = 'process/log'
-  await FileSystem.ensureDir(rootPath)
+  // await FileSystem.ensureDir(rootPath)
 
   let pidPath = 'process/pid/log-attach-on-sighup.pid'
-  await FileSystem.ensureDir(Path.dirname(pidPath))
+  // await FileSystem.ensureDir(Path.dirname(pidPath))
 
   let workerLogPath = `${rootPath}/log-attach-on-sighup-worker.log`
   let originalLogPath = `${rootPath}/log-attach-on-sighup-original.log`
@@ -243,7 +243,7 @@ Test('Log.attach() on SIGHUP optionally throws LogOptionNotSupportedError', asyn
 Test('Log.attach() when called twice', async (test) => {
 
   let logPath = 'process/log/log-attach-twice.log'
-  await FileSystem.ensureDir(Path.dirname(logPath))
+  // await FileSystem.ensureDir(Path.dirname(logPath))
 
   let log = new Log(logPath, { 'level': 'trace' })
 
@@ -262,7 +262,7 @@ Test('Log.attach() when called twice', async (test) => {
 Test('Log.detach() on exit', async (test) => {
 
   let rootPath = 'process/log'
-  await FileSystem.ensureDir(rootPath)
+  // await FileSystem.ensureDir(rootPath)
 
   let workerLogPath = `${rootPath}/log-detach-worker.log`
   let logPath = `${rootPath}/log-detach.log`
@@ -299,7 +299,7 @@ Test('Log.detach() on exit', async (test) => {
 Test('Log.detach() when called twice', async (test) => {
 
   let logPath = 'process/log/log-detach-twice.log'
-  await FileSystem.ensureDir(Path.dirname(logPath))
+  // await FileSystem.ensureDir(Path.dirname(logPath))
 
   let log = new Log(logPath, { 'level': 'trace' })
 
@@ -328,7 +328,7 @@ Test('Log.detach() when called twice', async (test) => {
   Test(`Log.${methodName}('${methodName}')`, async (test) => {
 
     let logPath = `process/log/log-${methodName}.log`
-    await FileSystem.ensureDir(Path.dirname(logPath))
+    // await FileSystem.ensureDir(Path.dirname(logPath))
 
     let log = new Log(logPath, { 'level': methodName })
 

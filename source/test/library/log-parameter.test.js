@@ -1,5 +1,5 @@
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
-import Path from 'path'
+// import Path from 'path'
 import Stream from 'stream'
 import Test from 'ava'
 
@@ -10,7 +10,7 @@ import { LogDestination } from '../../library/log-destination.js'
 Test.before(async (test) => {
 
   test.context.logPath = 'process/log/log-parameter.log'
-  await FileSystem.ensureDir(Path.dirname(test.context.logPath))
+  // await FileSystem.ensureDir(Path.dirname(test.context.logPath))
 
   test.context.log = new Log(test.context.logPath, { 'level': 'trace' })
 
