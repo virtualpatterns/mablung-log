@@ -61,7 +61,7 @@ AClass.prototype.getPid._formatReturnValue = function _formatReturnValue(pid) {
 Test('LogHandler.construct(target, parameter) using _formatConstructorParameter', async test => {
 
   let logPath = 'process/log/log-handler-construct.log';
-  await FileSystem.ensureDir(Path.dirname(logPath));
+  // await FileSystem.ensureDir(Path.dirname(logPath))
 
   let log = new Log(logPath, { 'level': 'trace' });
 
@@ -85,7 +85,7 @@ Test('LogHandler.construct(target, parameter) using _formatConstructorParameter'
 Test('LogHandler.get(target, propertyName, receiver) when propertyName is a symbol', async test => {
 
   let logPath = 'process/log/log-handler-get-symbol.log';
-  await FileSystem.ensureDir(Path.dirname(logPath));
+  // await FileSystem.ensureDir(Path.dirname(logPath))
 
   let log = new Log(logPath, { 'level': 'trace' });
 
@@ -110,7 +110,7 @@ Test('LogHandler.get(target, propertyName, receiver) when propertyName is a symb
 Test('LogHandler.get(target, propertyName, receiver) when propertyName is \'_formatConstructorParameter\'', async test => {
 
   let logPath = 'process/log/log-handler-get-format-constructor-parameter.log';
-  await FileSystem.ensureDir(Path.dirname(logPath));
+  // await FileSystem.ensureDir(Path.dirname(logPath))
 
   let log = new Log(logPath, { 'level': 'trace' });
 
@@ -134,7 +134,7 @@ Test('LogHandler.get(target, propertyName, receiver) when propertyName is \'_for
 Test('LogHandler.get(target, propertyName, receiver) when propertyName is \'_formatParameter\'', async test => {
 
   let logPath = 'process/log/log-handler-get-format-parameter.log';
-  await FileSystem.ensureDir(Path.dirname(logPath));
+  // await FileSystem.ensureDir(Path.dirname(logPath))
 
   let log = new Log(logPath, { 'level': 'trace' });
 
@@ -159,7 +159,7 @@ Test('LogHandler.get(target, propertyName, receiver) when propertyName is \'_for
 Test('LogHandler.get(target, propertyName, receiver) when propertyName is \'_formatReturnValue\'', async test => {
 
   let logPath = 'process/log/log-handler-get-format-return-value.log';
-  await FileSystem.ensureDir(Path.dirname(logPath));
+  // await FileSystem.ensureDir(Path.dirname(logPath))
 
   let log = new Log(logPath, { 'level': 'trace' });
 
@@ -184,7 +184,7 @@ Test('LogHandler.get(target, propertyName, receiver) when propertyName is \'_for
 Test('LogHandler.apply(target, self, parameter) when target fails', async test => {
 
   let logPath = 'process/log/log-handler-apply-fails.log';
-  await FileSystem.ensureDir(Path.dirname(logPath));
+  // await FileSystem.ensureDir(Path.dirname(logPath))
 
   let log = new Log(logPath, { 'level': 'trace' });
 
@@ -209,7 +209,7 @@ Test('LogHandler.apply(target, self, parameter) when target fails', async test =
 Test('LogHandler.apply(target, self, parameter) when target returns a Promise', async test => {
 
   let logPath = 'process/log/log-handler-apply-promise.log';
-  await FileSystem.ensureDir(Path.dirname(logPath));
+  // await FileSystem.ensureDir(Path.dirname(logPath))
 
   let log = new Log(logPath, { 'level': 'trace' });
 
