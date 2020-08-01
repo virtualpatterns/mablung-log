@@ -1,4 +1,4 @@
-import '@virtualpatterns/mablung-source-map-support/install.js'
+import '@virtualpatterns/mablung-source-map-support/install'
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
 import Path from 'path'
 import { WorkerClient } from '@virtualpatterns/mablung-worker'
