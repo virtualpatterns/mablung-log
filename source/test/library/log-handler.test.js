@@ -243,13 +243,18 @@ Test('LogHandler.apply(target, self, parameter) when target takes a variety of a
     let aClass = new AClass()
     let _aClass = log.createProxy(aClass)
 
-    test.notThrows(() => { _aClass.callIt(null, undefined, new Date(('1995-12-17T03:24:00')), /abc/i) })
+    let date = new Date('1995-12-17T03:24:00')
+    let offset = date.getTimezoneOffset() / 60
+
+    test.notThrows(() => { _aClass.callIt(null, undefined, date, /abc/i) })
   
     let logContents = await FileSystem.readAllJson(logPath, { 'encoding': 'utf-8' })
   
     test.is(logContents.length, 2)
-    test.is(logContents[1].msg, '< AClass.callIt(null, undefined, \'1995.12.17-03:24:00.000-0500\', /abc/i)')
-  
+
+    test.log(logContents[1].msg)
+    test.is(logContents[1].msg, `< AClass.callIt(null, undefined, '1995.12.17-03:24:00.000${offset > 0 ? '-' : '+'}${(offset * 100).toString().padStart(4, '0')}', /abc/i)`)
+      
   } finally {
     await FileSystem.remove(logPath)
   }
