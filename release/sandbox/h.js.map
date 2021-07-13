@@ -1,1 +1,0 @@
-{"version":3,"sources":["../../source/sandbox/h.js"],"names":["OS","console","log","hostname"],"mappings":"AAAA,OAAOA,EAAP,MAAe,IAAf;;AAEAC,OAAO,CAACC,GAAR,CAAYF,EAAE,CAACG,QAAH,EAAZ","sourcesContent":["import OS from 'os'\n\nconsole.log(OS.hostname())"],"file":"h.js"}
