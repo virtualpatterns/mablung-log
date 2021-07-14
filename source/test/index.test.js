@@ -10,7 +10,8 @@ Test.before(async (test) => {
   'FormattedLog',
   'ShortFormattedLog',
   'LogAttachedError',
-  'LogDetachedError'
+  'LogDetachedError',
+  'OK'
 ].forEach((name) => {
 
   Test(name, async (test) => {
