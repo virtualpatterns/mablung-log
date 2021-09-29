@@ -1,5 +1,5 @@
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
-import Is from '@pwn/is'
+import { Is } from '@virtualpatterns/mablung-is'
 import Path from 'path'
 import Pino from 'pino'
 
@@ -13,20 +13,16 @@ class LogDestination {
       FileSystem.ensureDirSync(Path.dirname(target))
     }
 
-    this._pinoDestination = this._createPinoDestination(target)
+    this.pinoDestination = this.createPinoDestination(target)
 
   }
 
-  _createPinoDestination(...parameter) {
-    return Pino.destination(...parameter)
-  }
-
-  get pinoDestination() {
-    return this._pinoDestination
+  createPinoDestination(...argument) {
+    return Pino.destination(...argument)
   }
 
   rotate() {
-    this._pinoDestination.reopen()
+    this.pinoDestination.reopen()
   }
 
 }

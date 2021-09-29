@@ -17,12 +17,12 @@ import { FormattedLog, Log } from '../index'
     // _log.info('info')
     // _formattedLog.info('info')
 
-    Log.onImmediate(log, (immediateLog, ...parameter) => {
-      immediateLog.info({ parameter }, 'Log.onImmediate(log, (immediateLog, ...parameter) => { ... })( ... )')
+    Log.onImmediate(log, (immediateLog, ...argument) => {
+      immediateLog.info({ argument }, 'Log.onImmediate(log, (immediateLog, ...argument) => { ... })( ... )')
     })('new Log()')
 
-    Log.onImmediate(formattedLog, (immediateLog, ...parameter) => {
-      immediateLog.info({ parameter }, 'Log.onImmediate(log, (immediateLog, ...parameter) => { ... })( ... )')
+    Log.onImmediate(formattedLog, (immediateLog, ...argument) => {
+      immediateLog.info({ argument }, 'Log.onImmediate(log, (immediateLog, ...argument) => { ... })( ... )')
     })('new FormattedLog()')
 
     console.log('hey')

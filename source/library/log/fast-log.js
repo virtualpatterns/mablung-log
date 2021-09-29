@@ -3,12 +3,12 @@ import { Log } from '../log.js'
 
 class FastLog extends Log {
 
-  constructor(...parameter) {
-    super(...parameter)
+  constructor(...argument) {
+    super(...argument)
   }
 
-  createDestination(...parameter) {
-    return new FastDestination(...parameter)
+  createDestination(...argument) {
+    return new FastDestination(...argument)
   }
   
 }

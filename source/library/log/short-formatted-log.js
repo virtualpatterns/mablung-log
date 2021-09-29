@@ -4,23 +4,21 @@ import { FormattedLog } from './formatted-log.js'
 
 class ShortFormattedLog extends FormattedLog {
 
-  constructor(...parameter) {
-    super(...parameter)
+  constructor(...argument) {
+    super(...argument)
   }
 
   get defaultOption() {
 
-    let defaultOption = { 
-      'prettyPrint': { 
-        'inspect': { 
-          'depth': 1, 
-          'maxArrayLength': 5, 
-          'showHidden': false 
-        } 
-      } 
-    }
-
-    return Configuration.merge(super.defaultOption, defaultOption)
+    return Configuration.merge(super.defaultOption, {
+      'prettyPrint': {
+        'inspect': {
+          'depth': 1,
+          'maxArrayLength': 5,
+          'showHidden': false
+        }
+      }
+    })
     
   }
 

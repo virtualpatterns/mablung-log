@@ -1,47 +1,49 @@
 import { Configuration } from '@virtualpatterns/mablung-configuration'
 import { Is } from '@virtualpatterns/mablung-is'
 import Pino from 'pino'
+import Stream from 'stream'
 
 import { LogDestination } from './log-destination.js'
-import { LogHandler } from './log-handler.js'
-import { LogParameter } from './log-parameter.js'
+// import { LogHandler } from './log-handler.js'
+// import { LogArgument } from './log-argument.js'
 
-import { LogAttachedError } from './error/log-attached-error.js'
-import { LogDetachedError } from './error/log-detached-error.js'
+// import { LogAttachedError } from './error/log-attached-error.js'
+// import { LogDetachedError } from './error/log-detached-error.js'
 import { LogOptionNotSupportedError } from './error/log-option-not-supported-error.js'
 
 const Process = process
 
 class Log {
 
-  constructor(...parameter) {
+  constructor(...argument) {
 
-    let [ userDestination, userOption ] = LogParameter.getConstructorParameter(this, ...parameter)
+    let [ userDestination, userOption ] = Log.getConstructorArgument(this, ...argument)
   
-    let destination = userDestination
-    let option = Configuration.getOption(this.defaultOption, userOption)
+    let logDestination = userDestination
+    let logOption = Configuration.getOption(this.defaultOption, userOption)
 
-    let pinoDestination = destination instanceof LogDestination ? destination.pinoDestination : destination
-    let pinoOption = option
+    let pinoDestination = logDestination instanceof LogDestination ? logDestination.pinoDestination : logDestination
+    let pinoOption = logOption
 
-    this._pinoLog = this._createPinoLog(pinoDestination, pinoOption)
+    this.pinoLog = this.createPinoLog(pinoDestination, pinoOption)
 
-    this._destination = destination
-    this._option = option
+    this.logDestination = logDestination
+    this.logOption = logOption
+
+    this.attachAllHandler()
 
   }
 
-  _createPinoLog(destination, option) {
+  createPinoLog(destination, option) {
     return Pino(option, destination)
   }
 
-  createDestination(...parameter) {
-    return new LogDestination(...parameter)
+  createDestination(...argument) {
+    return new LogDestination(...argument)
   }
 
-  /* c8 ignore next 3 */
   get destination() {
-    return this._destination
+    return this.logDestination
   }
 
   get defaultOption() {
@@ -51,225 +53,271 @@ class Log {
     }
   }
 
-  /* c8 ignore next 3 */
   get option() {
-    return this._option
+    return this.logOption
+  }
+
+  get handleExit() {
+    return this.logOption.handleExit || false
+  }
+
+  get handleRotate() {
+    return this.logOption.handleRotate || false
+  }
+
+  attachAllHandler() {
+
+    try {
+
+      if (this.handleExit) {
+
+        Process.on('exit', this.onExitHandler = this.onImmediate((immediateLog, code) => {
+          immediateLog.trace(`Process.on('exit', (${code}) => { ... })`)
+
+          try {
+            this.onExit(code)
+          } catch (error) {
+            immediateLog.error(error)
+          }
+
+        }))
+
+      }
+
+      // if (handleKillSignal) {
+
+      //   if (Is.windows()) {
+      //     throw new LogOptionNotSupportedError('handleKillSignal')
+      //   } else {
+
+      //     handleKillSignal.forEach((signal) => {
+      //       Process.on(signal, this[`on${signal}Handler`] = this.onImmediate((immediateLog) => {
+      //         immediateLog.trace(`Process.on('${signal}', this.on${signal}Handler = this.onImmediate((immediateLog) => { ... }))`)
+
+      //         try {
+      //           this.detachAllHandler()
+      //           /* c8 ignore next 3 */
+      //         } catch (error) {
+      //           immediateLog.error(error)
+      //         }
+
+      //         let count = Process.listenerCount(signal)
+
+      //         /* c8 ignore next 5 */
+      //         if (count <= 0) {
+      //           Process.exit()
+      //         } else {
+      //           immediateLog.trace(`Process.listenerCount('${signal}') returned ${count}`)
+      //         }
+
+      //       }))
+      //     })
+
+      //   }
+
+      // }
+
+      if (this.handleRotate) {
+
+        if (Is.windows()) {
+          throw new LogOptionNotSupportedError('handleRotate')
+        } else {
+
+          this.handleRotate.forEach((signal) => {
+            Process.on(signal, this[`on${signal}Handler`] = () => {
+              this.trace(`Process.on('${signal}', () => { ... })`)
+
+              try {
+                this.onRotate()
+              } catch (error) {
+                this.error(error)
+              }
+
+            })
+          })
+
+        }
+
+      }
+
+    } catch (error) {
+
+      // if (this.logOption.handleExit &&
+      //   this.onExitHandler) {
+      //   Process.off('exit', this.onExitHandler)
+      //   delete this.onExitHandler
+      // }
+
+      // if (handleKillSignal) {
+
+      //   handleKillSignal.forEach((signal) => {
+      //     if (this[`on${signal}Handler`]) {
+      //       Process.off(signal, this[`on${signal}Handler`])
+      //       delete this[`on${signal}Handler`]
+      //     }
+      //   })
+
+      // }
+
+      // if (handleRotate) {
+
+      //   this.handleRotate.forEach((signal) => {
+      //     if (this[`on${signal}Handler`]) {
+      //       Process.off(signal, this[`on${signal}Handler`])
+      //       delete this[`on${signal}Handler`]
+      //     }
+      //   })
+
+      // }
+
+      this.detachAllHandler()
+      throw error
+
+    }
+
+  }
+
+  detachAllHandler() {
+
+    if (this.handleRotate) {
+
+      this.handleRotate.forEach((signal) => {
+        if (this[`on${signal}Handler`]) {
+          Process.off(signal, this[`on${signal}Handler`])
+          delete this[`on${signal}Handler`]
+        }
+      })
+
+    }
+
+    // if (handleKillSignal) {
+
+    //   handleKillSignal.forEach((signal) => {
+    //     if (this[`on${signal}Handler`]) {
+    //       Process.off(signal, this[`on${signal}Handler`])
+    //       delete this[`on${signal}Handler`]
+    //     }
+    //   })
+
+    // }
+
+    if (this.handleExit &&
+        this.onExitHandler) {
+      Process.off('exit', this.onExitHandler)
+      delete this.onExitHandler
+    }
+
+  }
+
+  onExit(/* code */) {
+    this.detachAllHandler()
+  }
+
+  onRotate() {
+    this.rotate()
   }
 
   getLevelName(levelNumber) {
-    return this._pinoLog.levels.labels[levelNumber]
+    return this.pinoLog.levels.labels[levelNumber]
   }
 
-  trace(...parameter) {
-    return this._pinoLog.trace(...parameter)
+  trace(...argument) {
+    return this.pinoLog.trace(...argument)
   }
 
-  debug(...parameter) {
-    return this._pinoLog.debug(...parameter)
+  debug(...argument) {
+    return this.pinoLog.debug(...argument)
   }
 
-  info(...parameter) {
-    return this._pinoLog.info(...parameter)
+  info(...argument) {
+    return this.pinoLog.info(...argument)
   }
 
-  warn(...parameter) {
-    return this._pinoLog.warn(...parameter)
+  warn(...argument) {
+    return this.pinoLog.warn(...argument)
   }
 
-  error(...parameter) {
-    return this._pinoLog.error(...parameter)
+  error(...argument) {
+    return this.pinoLog.error(...argument)
   }
 
-  fatal(...parameter) {
-    return this._pinoLog.fatal(...parameter)
-  }
-
-  attach({ handleExit = true, handleKillSignal = Is.windows() ? false : [ 'SIGINT', 'SIGTERM' ], handleRotate = Is.windows() ? false : [ 'SIGHUP' ] } = {}) {
-    this.trace({ handleExit, handleKillSignal, handleRotate }, 'Log.attach(option)')
-
-    if (this._attachOption) {
-      throw new LogAttachedError()
-    } else {
-
-      try { 
-
-        if (handleExit) {
-
-          Process.on('exit', this.__onExit = this.onImmediate((immediateLog) => {
-            immediateLog.trace('Process.on(\'exit\', this.__onExit = this.onImmediate((immediateLog) => { ... }))')
-  
-            try {
-              this.detach()
-            /* c8 ignore next 3 */
-            } catch (error) {
-              immediateLog.error(error)
-            }
-  
-          }))
-  
-        }
-  
-        if (handleKillSignal) {
-    
-          if (Is.windows()) {
-            throw new LogOptionNotSupportedError('handleKillSignal')
-          } else {
-            
-            handleKillSignal.forEach((signal) => {
-              Process.on(signal, this[`__on${signal}`] = this.onImmediate((immediateLog) => {
-                immediateLog.trace(`Process.on('${signal}', this.__on${signal} = this.onImmediate((immediateLog) => { ... }))`)
-  
-                try {
-                  this.detach()
-                /* c8 ignore next 3 */
-                } catch (error) {
-                  immediateLog.error(error)
-                }
-        
-                let count = Process.listenerCount(signal)
-  
-                /* c8 ignore next 5 */
-                if (count <= 0) {
-                  Process.exit()
-                } else {
-                  immediateLog.trace(`Process.listenerCount('${signal}') returned ${count}`)
-                }
-  
-              }))
-            })
-  
-          }
-  
-        }
-  
-        if (handleRotate) {
-    
-          if (Is.windows()) {
-            throw new LogOptionNotSupportedError('handleRotate')
-          } else {
-              
-            handleRotate.forEach((signal) => {
-              Process.on(signal, this[`__on${signal}`] = () => {
-                this.trace(`Process.on('${signal}', this.__on${signal} = () => { ... })`)
-  
-                try {
-                  this.rotate()
-                /* c8 ignore next 3 */
-                } catch (error) {
-                  this.error(error)
-                }
-  
-              })
-            })
-  
-          }
-  
-        }
-          
-      } catch (error) {
-
-        if (handleExit && 
-            this.__onExit) {
-          Process.off('exit', this.__onExit)
-          delete this.__onExit
-        }
-
-        if (handleKillSignal) {
-
-          handleKillSignal.forEach((signal) => {
-            if (this[`__on${signal}`]) {
-              Process.off(signal, this[`__on${signal}`])
-              delete this[`__on${signal}`]
-            }
-          })
-
-        }
-
-        if (handleRotate) {
-
-          handleRotate.forEach((signal) => {
-            if (this[`__on${signal}`]) {
-              Process.off(signal, this[`__on${signal}`])
-              delete this[`__on${signal}`]
-            }
-          })
-
-        }
-
-        throw error
-
-      }
-
-      this._attachOption = { handleExit, handleKillSignal, handleRotate }
-
-    }
-
-  }
-
-  detach() {
-    this.trace('Log.detach()')
-
-    if (this._attachOption) {
-
-      let { handleExit, handleKillSignal, handleRotate } = this._attachOption
-
-      if (handleExit && 
-          this.__onExit) {
-        Process.off('exit', this.__onExit)
-        delete this.__onExit
-      }
-
-      if (handleKillSignal) {
-  
-        handleKillSignal.forEach((signal) => {
-          if (this[`__on${signal}`]) {
-            Process.off(signal, this[`__on${signal}`])
-            delete this[`__on${signal}`]
-          }
-        })
-
-      }
-
-      if (handleRotate) {
-
-        handleRotate.forEach((signal) => {
-          if (this[`__on${signal}`]) {
-            Process.off(signal, this[`__on${signal}`])
-            delete this[`__on${signal}`]
-          }
-        })
-
-      }
-
-      delete this._attachOption
-        
-    } else {
-      throw new LogDetachedError()
-    }
-
+  fatal(...argument) {
+    return this.pinoLog.fatal(...argument)
   }
 
   rotate() {
-    this._destination.rotate()
+    this.logDestination.rotate()
   }
 
-  createProxy(object) {
-    return new Proxy(object, new LogHandler(this))
-  }
+  // createProxy(object) {
+  //   return new Proxy(object, new LogHandler(this))
+  // }
 
   onImmediate(immediateFn) {
 
-    return Pino.final(this._pinoLog, (error, pinoLog, ...parameter) => {
+    return Pino.final(this.pinoLog, (error, pinoLog, ...argument) => {
 
       let immediateLog = null
-      immediateLog = new this.constructor(this._destination, this._option)
-      immediateLog._pinoLog = pinoLog
+      immediateLog = new this.constructor(this.logDestination, Configuration.getOption(this.logOption, { 'handleExit': false, 'handleRotate': false }))
+      immediateLog.pinoLog = pinoLog
 
-      let immediateParameter = Is.not.null(error) ? [error, ...parameter] : parameter
+      let immediateArgument = Is.null(error) ? argument : [ error, ...argument ]
 
-      immediateFn(immediateLog, ...immediateParameter)
+      immediateFn.call(this, immediateLog, ...immediateArgument)
 
     })
+
+  }
+
+  static getConstructorArgument(log, ...argument) {
+
+    // the defaults
+    let _destination = null
+    let logOption = {}
+
+    switch (argument.length) {
+      case 0:
+        // _destination = default
+        // logOption = default
+        break
+      case 1:
+
+        switch (true) {
+          case argument[0] instanceof LogDestination:
+          case argument[0] instanceof Stream.Writable:
+            _destination = argument[0]
+            // logOption = default
+            break
+          case Is.string(argument[0]):
+            _destination = log.createDestination(argument[0])
+            // logOption = default
+            break
+          default:
+            // _destination = default
+            logOption = argument[0]
+        }
+
+        break
+      default:
+
+        switch (true) {
+          case argument[0] instanceof LogDestination:
+          case argument[0] instanceof Stream.Writable:
+            _destination = argument[0]
+            logOption = argument[1]
+            break
+          case Is.string(argument[0]):
+            _destination = log.createDestination(argument[0])
+            logOption = argument[1]
+            break
+          default:
+            _destination = argument[0]
+            logOption = argument[1]
+        }
+
+    }
+
+    return [ Is.null(_destination) ? log.createDestination() : _destination, logOption ]
 
   }
 

@@ -1,352 +1,129 @@
+import { CreateLoggedProcess, WorkerClient } from '@virtualpatterns/mablung-worker'
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
 import { Is } from '@virtualpatterns/mablung-is'
-// import Path from 'path'
-import { Process } from '@virtualpatterns/mablung-process'
-import { WorkerClient } from '@virtualpatterns/mablung-worker'
+import Path from 'path'
 import Test from 'ava'
 
-import { Log, LogAttachedError, LogDetachedError } from '../../index.js'
+import { Log } from '../../index.js'
 
+import { LogOptionNotSupportedError } from '../../index.js'
+
+const FilePath = __filePath
+const LogPath = FilePath.replace(/\/release\//, '/data/').replace(/\.test\.c?js$/, '.log')
+const LoggedClient = CreateLoggedProcess(WorkerClient, LogPath)
 const Require = __require
+const WorkerPath = Require.resolve('./worker/log.js')
 
-Test('new Log(path, option)', async (test) => {
+const JsonPath = FilePath.replace('/release/', '/data/').replace('.test.js', '.json')
+const JsonPathBeforeSIGHUP = JsonPath.replace('.json', '-before-sighup.json')
 
-  let logPath = 'process/log/log-constructor.log'
-  // await FileSystem.ensureDir(Path.dirname(logPath))
+Test.before(async () => {
+  await FileSystem.ensureDir(Path.dirname(LogPath))
+  await FileSystem.remove(LogPath)
+})
 
-  let log = new Log(logPath, { 'level': 'trace' })
+Test.beforeEach(() => {
+  return Promise.all([
+    FileSystem.remove(JsonPath),
+    FileSystem.remove(JsonPathBeforeSIGHUP)
+  ])
+})
+
+Test.serial('Log()', (test) => {
+  test.notThrows(() => { new Log() })
+})
+
+Test.serial('Log(\'...\')', async (test) => {
+  test.notThrows(() => { new Log(JsonPath) })
+  test.true(await FileSystem.pathExists(JsonPath))
+})
+
+Test.serial('Log(\'...\', { ... })', async (test) => {
+  test.notThrows(() => { new Log(JsonPath, {}) })
+  test.true(await FileSystem.pathExists(JsonPath))
+})
+
+Test.serial('Log(\'...\', { handleExit })', async (test) => {
+
+  let client = new LoggedClient(WorkerPath)
+
+  await client.whenReady()
 
   try {
-
-    log.trace('trace')
-
-    let logContent = await FileSystem.readAllJson(logPath, { 'encoding': 'utf-8' })
-  
-    test.is(logContent.length, 1)
-    test.is(logContent[0].msg, 'trace')
-  
+    await test.notThrowsAsync(client.worker.createLog(JsonPath, { 'level': 'trace', 'handleExit': true }))
   } finally {
-    await FileSystem.remove(logPath)
+    await client.exit()
   }
+
+  test.true(await FileSystem.pathExists(JsonPath))
+
+  let content = null
+  content = await FileSystem.readFile(JsonPath, { 'encoding': 'utf-8' })
+  content = content
+    .split('\n')
+    .filter((line) => Is.not.equal(line, ''))
+    .map((line) => JSON.parse(line))
+
+  // test.log(content)
+  test.is(content.length, 1)
+  test.is(content[0].msg, 'Process.on(\'exit\', (0) => { ... })')
 
 })
 
-Test('Log.getLevelName(levelNumber)', async (test) => {
+;(Is.windows() ? Test.serial.skip : Test.serial)('Log(\'...\', { handleExit, handleRotate })', async (test) => {
 
-  let logPath = 'process/log/log-get-level-name.log'
-  // await FileSystem.ensureDir(Path.dirname(logPath))
+  let client = new LoggedClient(WorkerPath)
 
-  let log = new Log(logPath, { 'level': 'trace' })
+  await client.whenReady()
 
   try {
 
-    [
-      [10, 'trace'],
-      [20, 'debug'],
-      [30, 'info'],
-      [40, 'warn'],
-      [50, 'error'],
-      [60, 'fatal']
-    ].forEach(([levelNumber, levelName]) => {
-      test.is(log.getLevelName(levelNumber), levelName)
+    await test.notThrowsAsync(async () => {
+
+      await client.worker.createLog(JsonPath, { 'level': 'trace', 'handleExit': true, 'handleRotate': [ 'SIGHUP'] })
+      await client.worker.trace('before SIGHUP')
+
+      await FileSystem.move(JsonPath, JsonPathBeforeSIGHUP)
+
+      await client.send('SIGHUP')
+      await FileSystem.whenExists(5000, 250, JsonPath)
+
+      await client.worker.trace('after SIGHUP')
+
     })
 
   } finally {
-    await FileSystem.remove(logPath)
+    await client.exit()
   }
+
+  test.true(await FileSystem.pathExists(JsonPathBeforeSIGHUP))
+
+  let content = null
+  content = await FileSystem.readFile(JsonPathBeforeSIGHUP, { 'encoding': 'utf-8' })
+  content = content
+    .split('\n')
+    .filter((line) => Is.not.equal(line, ''))
+    .map((line) => JSON.parse(line))
+
+  test.is(content.length, 2)
+  test.is(content[0].msg, 'before SIGHUP')
+  test.is(content[1].msg, 'Process.on(\'SIGHUP\', () => { ... })')
+
+  test.true(await FileSystem.pathExists(JsonPath))
+
+  content = await FileSystem.readFile(JsonPath, { 'encoding': 'utf-8' })
+  content = content
+    .split('\n')
+    .filter((line) => Is.not.equal(line, ''))
+    .map((line) => JSON.parse(line))
+
+  test.is(content.length, 2)
+  test.is(content[0].msg, 'after SIGHUP')
+  test.is(content[1].msg, 'Process.on(\'exit\', (0) => { ... })')
 
 })
 
-Test('Log.attach() on exit', async (test) => {
-
-  let rootPath = 'process/log'
-  // await FileSystem.ensureDir(rootPath)
-
-  let workerLogPath = `${rootPath}/log-attach-on-exit-worker.log`
-  let logPath = `${rootPath}/log-attach-on-exit.log`
-
-  let worker = new WorkerClient(Require.resolve('./worker.js'))
-
-  try {
-
-    worker.writeTo(workerLogPath)
-
-    await worker.module.createLog(logPath, { 'level': 'trace' })
-    await worker.module.attach({ 'handleExit': true, 'handleKillSignal': false, 'handleRotate': false })
-
-    await worker.exit()
-
-    let logContent = await FileSystem.readAllJson(logPath, { 'encoding': 'utf-8' })
-
-    test.is(logContent.length, 3)
-
-    test.is(logContent[1].msg, 'Process.on(\'exit\', this.__onExit = this.onImmediate((immediateLog) => { ... }))')
-    test.is(logContent[2].msg, 'Log.detach()')
-
-  } finally {
-
-    await Promise.all([
-      FileSystem.remove(workerLogPath),
-      FileSystem.remove(logPath)
-    ]) 
-
-  }
-
-})
-
-Test('Log.attach() on SIGINT optionally throws LogOptionNotSupportedError', async (test) => {
-
-  let rootPath = 'process/log'
-  // await FileSystem.ensureDir(rootPath)
-
-  let pidPath = 'process/pid/log-attach-on-sigint.pid'
-  // await FileSystem.ensureDir(Path.dirname(pidPath))
-
-  let workerLogPath = `${rootPath}/log-attach-on-sigint-worker.log`
-  let logPath = `${rootPath}/log-attach-on-sigint.log`
-
-  let worker = new WorkerClient(Require.resolve('./worker.js'))
-
-  try {
-
-    worker.writeTo(workerLogPath)
-
-    await worker.module.createPidFile(pidPath)
-    await worker.module.createLog(logPath, { 'level': 'trace' })
-
-    if (Is.windows()) {
-
-      try {
-        await test.throwsAsync(worker.module.attach({ 'handleExit': false, 'handleKillSignal': [ 'SIGINT' ], 'handleRotate': false }), { 'instanceOf': Error })
-      } finally {
-        await worker.exit()
-      }
-
-    } else {
-
-      await worker.module.attach({ 'handleExit': false, 'handleKillSignal': [ 'SIGINT' ], 'handleRotate': false })
-    
-      Process.signalPidFile(pidPath, 'SIGINT')
-  
-      let maximumDuration = 5000
-      let pollInterval = maximumDuration / 8
-    
-      await FileSystem.whenNotExists(maximumDuration, pollInterval, pidPath)
-  
-      let logContent = await FileSystem.readAllJson(logPath, { 'encoding': 'utf-8' })
-  
-      test.is(logContent.length, 3)
-  
-      test.is(logContent[1].msg, 'Process.on(\'SIGINT\', this.__onSIGINT = this.onImmediate((immediateLog) => { ... }))')
-      test.is(logContent[2].msg, 'Log.detach()')
-  
-    }
-
-  } finally {
-
-    await Promise.all([
-      FileSystem.remove(workerLogPath),
-      FileSystem.remove(logPath)
-    ]) 
-
-  }
-
-})
-
-Test('Log.attach() on SIGHUP optionally throws LogOptionNotSupportedError', async (test) => {
-
-  let rootPath = 'process/log'
-  // await FileSystem.ensureDir(rootPath)
-
-  let pidPath = 'process/pid/log-attach-on-sighup.pid'
-  // await FileSystem.ensureDir(Path.dirname(pidPath))
-
-  let workerLogPath = `${rootPath}/log-attach-on-sighup-worker.log`
-  let originalLogPath = `${rootPath}/log-attach-on-sighup-original.log`
-  let renamedLogPath = `${rootPath}/log-attach-on-sighup-renamed.log`
-
-  let worker = new WorkerClient(Require.resolve('./worker.js'))
-
-  try {
-
-    worker.writeTo(workerLogPath)
-
-    await worker.module.createPidFile(pidPath)
-
-    try {
-      
-      await worker.module.createLog(originalLogPath, { 'level': 'trace' })
-    
-      try {
-
-        if (Is.windows()) {
-          await test.throwsAsync(worker.module.attach({ 'handleExit': false, 'handleKillSignal': false, 'handleRotate': [ 'SIGHUP' ] }), { 'instanceOf': Error })
-        } else {
-    
-          await worker.module.attach({ 'handleExit': false, 'handleKillSignal': false, 'handleRotate': [ 'SIGHUP' ] })
-
-          try {
-  
-            await worker.module.trace('before SIGHUP')
-  
-            await FileSystem.move(originalLogPath, renamedLogPath, { 'overwrite': true })
-      
-            Process.signalPidFile(pidPath, 'SIGHUP')
-  
-            let maximumDuration = 1000
-            let pollInterval = maximumDuration / 4
-          
-            await FileSystem.whenExists(maximumDuration, pollInterval, originalLogPath)
-      
-            await worker.module.trace('after SIGHUP')
-  
-            let logContent = null
-            logContent = await FileSystem.readAllJson(renamedLogPath, { 'encoding': 'utf-8' })
-    
-            test.is(logContent.length, 3)
-            test.is(logContent[1].msg, 'before SIGHUP')
-            test.is(logContent[2].msg, 'Process.on(\'SIGHUP\', this.__onSIGHUP = () => { ... })')
-  
-            logContent = await FileSystem.readAllJson(originalLogPath, { 'encoding': 'utf-8' })
-  
-            test.is(logContent.length, 1)
-            test.is(logContent[0].msg, 'after SIGHUP')
-  
-          } finally {
-            await worker.module.detach()
-          }
-      
-        }
-  
-      } finally {
-        await worker.module.destroyLog()
-      }
-
-    } finally {
-      await worker.module.deletePidFile()
-    }
-
-  } finally {
-
-    await worker.exit()
-
-    await Promise.all([
-      FileSystem.remove(workerLogPath),
-      FileSystem.remove(originalLogPath),
-      FileSystem.remove(renamedLogPath)
-    ]) 
-
-  }
-
-})
-
-Test('Log.attach() when called twice', async (test) => {
-
-  let logPath = 'process/log/log-attach-twice.log'
-  // await FileSystem.ensureDir(Path.dirname(logPath))
-
-  let log = new Log(logPath, { 'level': 'trace' })
-
-  try {
-
-    log.attach()
-
-    test.throws(() => { log.attach() }, { 'instanceOf': LogAttachedError })
-  
-  } finally {
-    await FileSystem.remove(logPath)
-  }
-
-})
-
-Test('Log.detach() on exit', async (test) => {
-
-  let rootPath = 'process/log'
-  // await FileSystem.ensureDir(rootPath)
-
-  let workerLogPath = `${rootPath}/log-detach-worker.log`
-  let logPath = `${rootPath}/log-detach.log`
-
-  let worker = new WorkerClient(Require.resolve('./worker.js'))
-
-  try {
-
-    worker.writeTo(workerLogPath)
-
-    await worker.module.createLog(logPath, { 'level': 'trace' })
-
-    await worker.module.attach()
-    await worker.module.detach()
-
-    await worker.exit()
-
-    let logContent = await FileSystem.readAllJson(logPath, { 'encoding': 'utf-8' })
-
-    test.is(logContent.length, 2)
-    test.is(logContent[1].msg, 'Log.detach()')
-
-  } finally {
-
-    await Promise.all([
-      FileSystem.remove(workerLogPath),
-      FileSystem.remove(logPath)
-    ]) 
-
-  }
-
-})
-
-Test('Log.detach() when called twice', async (test) => {
-
-  let logPath = 'process/log/log-detach-twice.log'
-  // await FileSystem.ensureDir(Path.dirname(logPath))
-
-  let log = new Log(logPath, { 'level': 'trace' })
-
-  try {
-
-    log.attach()
-    log.detach()
-
-    test.throws(() => { log.detach() }, { 'instanceOf': LogDetachedError })
-  
-  } finally {
-    await FileSystem.remove(logPath)
-  }
-
-})
-
-;[
-  'trace',
-  'debug',
-  'info',
-  'error',
-  'warn',
-  'fatal'
-].forEach((methodName) => {
-
-  Test(`Log.${methodName}('${methodName}')`, async (test) => {
-
-    let logPath = `process/log/log-${methodName}.log`
-    // await FileSystem.ensureDir(Path.dirname(logPath))
-
-    let log = new Log(logPath, { 'level': methodName })
-
-    try {
-
-      log[methodName](methodName)
-
-      await Process.wait(1000)
-
-      let logContent = await FileSystem.readAllJson(logPath, { 'encoding': 'utf-8' })
-    
-      test.is(logContent.length, 1)
-      test.is(logContent[0].msg, methodName)
-    
-    } finally {
-      await FileSystem.remove(logPath)
-    }
-
-  })
-
+;(Is.windows() ? Test.serial : Test.serial.skip)('Log(\'...\', { handleRotate }) throws LogOptionNotSupportedError', async (test) => {
+  test.throws(() => { new Log(JsonPath, { 'handleRotate': [ 'SIGHUP' ] }) }, { 'instanceOf': LogOptionNotSupportedError })
+  test.true(await FileSystem.pathExists(JsonPath))
 })

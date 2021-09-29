@@ -4,12 +4,17 @@ import { LogDestination } from '../log-destination.js'
 
 class FastDestination extends LogDestination {
 
-  constructor(...parameter) {
-    super(...parameter)
+  constructor(...argument) {
+    super(...argument)
   }
 
-  _createPinoDestination(...parameter) {
-    return Pino.extreme(...parameter)
+  createPinoDestination(path) {
+    // return Pino.extreme(...argument)
+    return Pino.destination({
+      'dest': path,
+      'minLength': 4096,
+      'sync': false
+    })
   }
 
 }

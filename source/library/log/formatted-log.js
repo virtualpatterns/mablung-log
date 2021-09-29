@@ -1,41 +1,36 @@
-import Clone from 'clone'
 import { Configuration } from '@virtualpatterns/mablung-configuration'
+import { DateTime } from 'luxon'
 import { Is } from '@virtualpatterns/mablung-is'
-import Luxon from 'luxon'
-import Utilities from 'util'
+import Clone from 'clone'
+import Utility from 'util'
 
 import { Log } from '../log.js'
-
-const { DateTime } = Luxon
 
 const MILLISECONDS_PER_NANOSECOND = 1000000
 
 class FormattedLog extends Log {
 
-  constructor(...parameter) {
-    super(...parameter)
+  constructor(...argument) {
+    super(...argument)
   }
 
   get defaultOption() {
 
-    let defaultOption = { 
-      'prettyPrint': { 
-        'inspect': { 
-          'depth': null, 
-          'maxArrayLength': null, 
-          'showHidden': true 
+    return Configuration.merge(super.defaultOption, {
+      'prettyPrint': {
+        'inspect': {
+          'depth': null,
+          'maxArrayLength': null,
+          'showHidden': true
         },
         'nestedKey': super.defaultOption.nestedKey
-      }, 
-      'prettifier': this.getPrettifier.bind(this) 
-    }
-
-    return Configuration.merge(super.defaultOption, defaultOption)
+      },
+      'prettifier': this.getPrettifier.bind(this)
+    })
 
   }
 
   getPrettifier(prettifierOption) {
-    // return this.format.bind(this, prettifierOption)
     return (function (option, data) { return this.format(data, option) }).bind(this, prettifierOption)
   }
 
@@ -59,7 +54,7 @@ class FormattedLog extends Log {
     }
 
     let string = ''
-    string += Utilities.format(
+    string += Utility.format(
       '%s %s %s %s %s%s',
       this.formatDateTime(data.time),
       this.formatComputerName(data.hostname),
@@ -114,7 +109,7 @@ class FormattedLog extends Log {
   }
 
   formatInspect(data, option) {
-    return Utilities.inspect(data, option)
+    return Utility.inspect(data, option)
   }
 
 }
