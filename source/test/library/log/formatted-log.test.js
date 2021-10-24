@@ -45,6 +45,7 @@ Test.serial('FormattedLog(\'...\', { ... })', async (test) => {
   
   if (await FileSystem.pathExists(FileMapPath)) {
     test.is(content[11], `    at ${FilePath.replace('/release/', '/source/')}:28:21`)
+  /* c8 ignore next 3 */
   } else {
     test.log(`'${Path.relative('', FileMapPath)}' does not exist!`)
   }
