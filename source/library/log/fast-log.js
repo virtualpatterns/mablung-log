@@ -1,4 +1,5 @@
-import { FastDestination } from './fast-destination.js'
+
+import { FastDestination } from '../destination/fast-destination.js'
 import { Log } from '../log.js'
 
 class FastLog extends Log {
@@ -7,10 +8,10 @@ class FastLog extends Log {
     super(...argument)
   }
 
-  createDestination(...argument) {
+  createFileDestination(...argument) {
     return new FastDestination(...argument)
   }
-  
+
 }
 
 export { FastLog }

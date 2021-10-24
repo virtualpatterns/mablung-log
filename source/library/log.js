@@ -1,15 +1,13 @@
 import { Configuration } from '@virtualpatterns/mablung-configuration'
+import { Console } from 'console'
 import { Is } from '@virtualpatterns/mablung-is'
-import Pino from 'pino'
+import OS from 'os'
 import Stream from 'stream'
 
-import { LogDestination } from './log-destination.js'
-// import { LogHandler } from './log-handler.js'
-// import { LogArgument } from './log-argument.js'
-
-// import { LogAttachedError } from './error/log-attached-error.js'
-// import { LogDetachedError } from './error/log-detached-error.js'
-import { LogOptionNotSupportedError } from './error/log-option-not-supported-error.js'
+import { Destination } from './destination.js'
+import { ConsoleDestination } from './destination/console-destination.js'
+import { FileDestination } from './destination/file-destination.js'
+import { StreamDestination } from './destination/stream-destination.js'
 
 const Process = process
 
@@ -17,169 +15,347 @@ class Log {
 
   constructor(...argument) {
 
-    let [ userDestination, userOption ] = Log.getConstructorArgument(this, ...argument)
-  
-    let logDestination = userDestination
-    let logOption = Configuration.getOption(this.defaultOption, userOption)
+    let [ userDestination, userOption ] = this.getConstructorArgument(...argument)
 
-    let pinoDestination = logDestination instanceof LogDestination ? logDestination.pinoDestination : logDestination
-    let pinoOption = logOption
+    this.destination = userDestination
+    this.option = Configuration.getOption(this.defaultOption, userOption)
 
-    this.pinoLog = this.createPinoLog(pinoDestination, pinoOption)
+    if (this.handleRotate &&
+        Is.not.windows()) {
 
-    this.logDestination = logDestination
-    this.logOption = logOption
+      this.handleRotate.forEach((signal) => {
+        Process.on(signal, this[`on${signal}Handler`] = async () => {
 
-    this.attachAllHandler()
+          try {
+            await this.onRotate(signal)
+          } catch (error) {
+            await this.error(error)
+          }
+
+        })
+      })
+
+    }
+
+    if (this.handleExit) {
+
+      Process.once('beforeExit', this.onBeforeExitHandler = async (code) => {
+        delete this.onBeforeExitHandler
+
+        try {
+          await this.onBeforeExit(code)
+        } catch (error) {
+          await this.error(error)
+        }
+
+      })
+
+    }
 
   }
 
-  createPinoLog(destination, option) {
-    return Pino(option, destination)
+  static get level() {
+    return [
+      'trace',
+      'debug',
+      'info',
+      'warn',
+      'error',
+      'fatal'
+    ]
   }
 
-  createDestination(...argument) {
-    return new LogDestination(...argument)
+  getConstructorArgument(...argument) {
+
+    // the defaults
+    let destination = this.createConsoleDestination()
+    let option = {}
+
+    switch (argument.length) {
+      case 0:
+        // destination = default
+        // option = default
+        break
+      case 1:
+
+        switch (true) {
+          case argument[0] instanceof Destination:
+            destination = argument[0]
+            // option = default
+            break
+          case argument[0] instanceof Console:
+            destination = this.createConsoleDestination(argument[0])
+            // option = default
+            break
+          case argument[0] instanceof Stream.Writable:
+            destination = this.createStreamDestination(argument[0])
+            // option = default
+            break
+          case Is.string(argument[0]):
+            destination = this.createFileDestination(argument[0])
+            // option = default
+            break
+          default:
+            // destination = default
+            option = argument[0]
+        }
+
+        break
+      default:
+
+        switch (true) {
+          case argument[0] instanceof Destination:
+            destination = argument[0]
+            option = argument[1]
+            break
+          case argument[0] instanceof Console:
+            destination = this.createConsoleDestination(argument[0])
+            option = argument[1]
+            break
+          case argument[0] instanceof Stream.Writable:
+            destination = this.createStreamDestination(argument[0])
+            option = argument[1]
+            break
+          case Is.string(argument[0]):
+            destination = this.createFileDestination(argument[0])
+            option = argument[1]
+            break
+          default:
+            // destination = default
+            option = argument[1]
+        }
+
+    }
+
+    return [ destination, option ]
+
   }
 
-  get destination() {
-    return this.logDestination
+  createConsoleDestination(...argument) {
+    return new ConsoleDestination(...argument)
+  }
+
+  createStreamDestination(...argument) {
+    return new StreamDestination(...argument)
+  }
+
+  createFileDestination(...argument) {
+    return new FileDestination(...argument)
   }
 
   get defaultOption() {
     return {
-      'level': 'info',
-      'nestedKey': 'data'
+      'level': 'info'
     }
   }
 
-  get option() {
-    return this.logOption
-  }
-
-  get handleExit() {
-    return this.logOption.handleExit || false
+  get level() {
+    return this.option.level
   }
 
   get handleRotate() {
-    return this.logOption.handleRotate || false
+    return this.option.handleRotate || false
   }
 
-  attachAllHandler() {
+  get handleExit() {
+    return this.option.handleExit || false
+  }
 
-    try {
+  // attach() {
 
-      if (this.handleExit) {
+  //   if (this.handleRotate &&
+  //       Is.not.windows()) {
 
-        Process.on('exit', this.onExitHandler = this.onImmediate((immediateLog, code) => {
-          immediateLog.trace(`Process.on('exit', (${code}) => { ... })`)
+  //     this.handleRotate.forEach((signal) => {
+  //       Process.on(signal, this[`on${signal}Handler`] = async () => {
+  //         // console.log(`Process.on('${signal}', async () => { ... })`)
 
-          try {
-            this.onExit(code)
-          } catch (error) {
-            immediateLog.error(error)
-          }
+  //         try {
+  //           await this.onRotate(signal)
+  //         } catch (error) {
+  //           await this.error(error)
+  //         }
 
-        }))
+  //       })
+  //     })
 
-      }
+  //   }
 
-      // if (handleKillSignal) {
+  //   if (this.handleExit) {
 
-      //   if (Is.windows()) {
-      //     throw new LogOptionNotSupportedError('handleKillSignal')
-      //   } else {
+  //     Process.once('beforeExit', this.onBeforeExitHandler = async (code) => {
+  //       // console.log(`Process#once('beforeExit', async (${code}) => { ... })`)
+  //       delete this.onBeforeExitHandler
 
-      //     handleKillSignal.forEach((signal) => {
-      //       Process.on(signal, this[`on${signal}Handler`] = this.onImmediate((immediateLog) => {
-      //         immediateLog.trace(`Process.on('${signal}', this.on${signal}Handler = this.onImmediate((immediateLog) => { ... }))`)
+  //       try {
+  //         await this.onBeforeExit(code)
+  //       } catch (error) {
+  //         await this.error(error)
+  //       }
 
-      //         try {
-      //           this.detachAllHandler()
-      //           /* c8 ignore next 3 */
-      //         } catch (error) {
-      //           immediateLog.error(error)
-      //         }
+  //     })
 
-      //         let count = Process.listenerCount(signal)
+  //   }
 
-      //         /* c8 ignore next 5 */
-      //         if (count <= 0) {
-      //           Process.exit()
-      //         } else {
-      //           immediateLog.trace(`Process.listenerCount('${signal}') returned ${count}`)
-      //         }
+  // }
 
-      //       }))
-      //     })
+  async onRotate(signal) {
+    await this.trace(`Log#onRotate('${signal}')`)
+    return this.rotate()
+  }
 
-      //   }
+  async onBeforeExit(code) {
+    await this.trace(`Log#onBeforeExit(${code})`)
+    return this.close()
+  }
 
-      // }
+  trace(...argument) {
+    return this.log('trace', ...argument)
+  }
 
-      if (this.handleRotate) {
+  debug(...argument) {
+    return this.log('debug', ...argument)
+  }
 
-        if (Is.windows()) {
-          throw new LogOptionNotSupportedError('handleRotate')
-        } else {
+  info(...argument) {
+    return this.log('info', ...argument)
+  }
 
-          this.handleRotate.forEach((signal) => {
-            Process.on(signal, this[`on${signal}Handler`] = () => {
-              this.trace(`Process.on('${signal}', () => { ... })`)
+  warn(...argument) {
+    return this.log('warn', ...argument)
+  }
 
-              try {
-                this.onRotate()
-              } catch (error) {
-                this.error(error)
-              }
+  error(...argument) {
+    return this.log('error', ...argument)
+  }
 
-            })
-          })
+  fatal(...argument) {
+    return this.log('fatal', ...argument)
+  }
 
-        }
+  log(level, ...argument) {
 
-      }
+    [ level, ...argument ] = this.getLogArgument(level, ...argument)
 
-    } catch (error) {
-
-      // if (this.logOption.handleExit &&
-      //   this.onExitHandler) {
-      //   Process.off('exit', this.onExitHandler)
-      //   delete this.onExitHandler
-      // }
-
-      // if (handleKillSignal) {
-
-      //   handleKillSignal.forEach((signal) => {
-      //     if (this[`on${signal}Handler`]) {
-      //       Process.off(signal, this[`on${signal}Handler`])
-      //       delete this[`on${signal}Handler`]
-      //     }
-      //   })
-
-      // }
-
-      // if (handleRotate) {
-
-      //   this.handleRotate.forEach((signal) => {
-      //     if (this[`on${signal}Handler`]) {
-      //       Process.off(signal, this[`on${signal}Handler`])
-      //       delete this[`on${signal}Handler`]
-      //     }
-      //   })
-
-      // }
-
-      this.detachAllHandler()
-      throw error
-
+    if (this.isLevelEnabled(level)) {
+      return this.writeData(level, this.formatData(level, this.getData(level, ...argument)))
     }
 
   }
 
-  detachAllHandler() {
+  getLogArgument(...argumentIn) {
 
-    if (this.handleRotate) {
+    // the defaults
+    let level = 'log'
+    let argumentOut = []
+
+    switch (argumentIn.length) {
+      /* c8 ignore next 4 */
+      case 0:
+        // level = default
+        // argumentOut = default
+        break
+      case 1:
+
+        switch (true) {
+          case [ ...Log.level, 'log' ].includes(argumentIn[0]):
+            level = argumentIn[0]
+            // argumentOut = default
+            break
+          default:
+            // level = default
+            argumentOut = argumentIn
+        }
+
+        break
+      default:
+
+        switch (true) {
+          case [ ...Log.level, 'log' ].includes(argumentIn[0]):
+            level = argumentIn[0]
+            argumentOut = argumentIn.slice(1)
+            break
+          default:
+            // level = default
+            argumentOut = argumentIn
+        }
+        
+    }
+
+    return [ level, ...argumentOut ]
+
+  }
+
+  isLevelEnabled(level) {
+    return Is.equal(level, 'log') || Log.level.indexOf(level) >= Log.level.indexOf(this.level)
+  }
+
+  writeData(level, data) {
+    return this.destination.write(level, data)
+  }
+
+  formatData(level, data) {
+
+    return `${JSON.stringify(data, (key, value) => {
+
+      switch (true) {
+        case value instanceof Error:
+          return {
+            'type': value.constructor.name,
+            'code': value.code,
+            'message': value.message,
+            'stack': value.stack
+          }
+        default:
+          return value
+      }
+      
+    })}\n`
+
+  }
+
+  getData(level, ...argument) {
+
+    let data = {
+      'date': new Date(),
+      'host': OS.hostname(),
+      'level': level,
+      'pid': Process.pid
+    }
+
+    argument.forEach((argument) => {
+
+      switch (true) {
+        // case argument instanceof Error:
+        //   data.error = Is.propertyDefined(data, 'error') ? (Is.array(data.error) ? data.error.concat([ argument ]) : [ data.error, argument ]) : argument
+        //   break
+        case Is.string(argument):
+          data.message = Is.propertyDefined(data, 'message') ? (Is.array(data.message) ? data.message.concat([ argument ]) : [ data.message, argument ]) : argument
+          break
+        default:
+          data.data = Is.propertyDefined(data, 'data') ? (Is.array(data.data) ? data.data.concat([ argument ]) : [ data.data, argument ]) : (Is.array(argument) ? [ argument ] : argument)
+      }
+
+    })
+
+    return data
+
+  }
+
+  rotate() {
+    return this.destination.rotate()
+  }
+
+  close() {
+
+    if (this.handleExit &&
+        this.onBeforeExitHandler) {
+      Process.off('beforeExit', this.onBeforeExitHandler)
+      delete this.onBeforeExitHandler
+    }
+
+    if (this.handleRotate &&
+        Is.not.windows()) {
 
       this.handleRotate.forEach((signal) => {
         if (this[`on${signal}Handler`]) {
@@ -190,136 +366,31 @@ class Log {
 
     }
 
-    // if (handleKillSignal) {
-
-    //   handleKillSignal.forEach((signal) => {
-    //     if (this[`on${signal}Handler`]) {
-    //       Process.off(signal, this[`on${signal}Handler`])
-    //       delete this[`on${signal}Handler`]
-    //     }
-    //   })
-
-    // }
-
-    if (this.handleExit &&
-        this.onExitHandler) {
-      Process.off('exit', this.onExitHandler)
-      delete this.onExitHandler
-    }
+    return this.destination.close()
 
   }
 
-  onExit(/* code */) {
-    this.detachAllHandler()
-  }
+  // detach() {
 
-  onRotate() {
-    this.rotate()
-  }
+  //   if (this.handleExit &&
+  //       this.onBeforeExitHandler) {
+  //     Process.off('beforeExit', this.onBeforeExitHandler)
+  //     delete this.onBeforeExitHandler
+  //   }
 
-  getLevelName(levelNumber) {
-    return this.pinoLog.levels.labels[levelNumber]
-  }
+  //   if (this.handleRotate &&
+  //       Is.not.windows()) {
 
-  trace(...argument) {
-    return this.pinoLog.trace(...argument)
-  }
+  //     this.handleRotate.forEach((signal) => {
+  //       if (this[`on${signal}Handler`]) {
+  //         Process.off(signal, this[`on${signal}Handler`])
+  //         delete this[`on${signal}Handler`]
+  //       }
+  //     })
 
-  debug(...argument) {
-    return this.pinoLog.debug(...argument)
-  }
+  //   }
 
-  info(...argument) {
-    return this.pinoLog.info(...argument)
-  }
-
-  warn(...argument) {
-    return this.pinoLog.warn(...argument)
-  }
-
-  error(...argument) {
-    return this.pinoLog.error(...argument)
-  }
-
-  fatal(...argument) {
-    return this.pinoLog.fatal(...argument)
-  }
-
-  rotate() {
-    this.logDestination.rotate()
-  }
-
-  // createProxy(object) {
-  //   return new Proxy(object, new LogHandler(this))
   // }
-
-  onImmediate(immediateFn) {
-
-    return Pino.final(this.pinoLog, (error, pinoLog, ...argument) => {
-
-      let immediateLog = null
-      immediateLog = new this.constructor(this.logDestination, Configuration.getOption(this.logOption, { 'handleExit': false, 'handleRotate': false }))
-      immediateLog.pinoLog = pinoLog
-
-      let immediateArgument = Is.null(error) ? argument : [ error, ...argument ]
-
-      immediateFn.call(this, immediateLog, ...immediateArgument)
-
-    })
-
-  }
-
-  static getConstructorArgument(log, ...argument) {
-
-    // the defaults
-    let _destination = null
-    let logOption = {}
-
-    switch (argument.length) {
-      case 0:
-        // _destination = default
-        // logOption = default
-        break
-      case 1:
-
-        switch (true) {
-          case argument[0] instanceof LogDestination:
-          case argument[0] instanceof Stream.Writable:
-            _destination = argument[0]
-            // logOption = default
-            break
-          case Is.string(argument[0]):
-            _destination = log.createDestination(argument[0])
-            // logOption = default
-            break
-          default:
-            // _destination = default
-            logOption = argument[0]
-        }
-
-        break
-      default:
-
-        switch (true) {
-          case argument[0] instanceof LogDestination:
-          case argument[0] instanceof Stream.Writable:
-            _destination = argument[0]
-            logOption = argument[1]
-            break
-          case Is.string(argument[0]):
-            _destination = log.createDestination(argument[0])
-            logOption = argument[1]
-            break
-          default:
-            _destination = argument[0]
-            logOption = argument[1]
-        }
-
-    }
-
-    return [ Is.null(_destination) ? log.createDestination() : _destination, logOption ]
-
-  }
 
 }
 

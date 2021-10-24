@@ -1,19 +1,19 @@
-import '@virtualpatterns/mablung-source-map-support/install'
-import { Is } from '@virtualpatterns/mablung-is'
+// import '@virtualpatterns/mablung-source-map-support/install'
+// import { Is } from '@virtualpatterns/mablung-is'
 
-async function main() {
+// async function main() {
 
-  try {
+//   try {
 
-    let f = async () => {}
+//     let f = async () => {}
 
-    console.log(Is.function(f))
-    console.dir(typeof f)
+//     console.log(Is.function(f))
+//     console.dir(typeof f)
 
-  } catch (error) {
-    console.error(error)
-  }
+//   } catch (error) {
+//     console.error(error)
+//   }
 
-}
+// }
 
-main()
+// main()

@@ -1,59 +1,118 @@
-import { CreateLoggedProcess, WorkerClient } from '@virtualpatterns/mablung-worker'
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
 import { Is } from '@virtualpatterns/mablung-is'
+import OS from 'os'
 import Path from 'path'
+import Sinon from 'sinon'
 import Test from 'ava'
 
-const FilePath = __filePath
-const LogPath = FilePath.replace(/\/release\//, '/data/').replace(/\.test\.c?js$/, '.log')
-const LoggedClient = CreateLoggedProcess(WorkerClient, LogPath)
-const Require = __require
-const WorkerPath = Require.resolve('./worker/formatted-log.js')
+import { FormattedLog } from '../../../index.js'
 
-const JsonPath = FilePath.replace('/release/', '/data/').replace('.test.js', '.json')
+const FilePath = __filePath
+const LogPath = FilePath.replace('/release/', '/data/').replace('.test.js', '.log')
 
 Test.before(async () => {
   await FileSystem.ensureDir(Path.dirname(LogPath))
-  await FileSystem.remove(LogPath)
 })
 
 Test.beforeEach(() => {
-  return FileSystem.remove(JsonPath)
+  return FileSystem.remove(LogPath)
 })
 
 Test.serial('FormattedLog(\'...\', { ... })', async (test) => {
 
-  let client = new LoggedClient(WorkerPath)
-
-  await client.whenReady()
+  let log = new FormattedLog(LogPath, { 'level': 'trace' })
 
   try {
-
-    await test.notThrowsAsync(async () => {
-
-      await client.worker.createFormattedLog(JsonPath, { 'level': 'trace', 'handleExit': true })
-
-      await client.worker.trace({ 'value': { 'value': { 'value': 0 } } }, 'trace')
-      await client.worker.trace({ 'value': [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]}, 'trace')
-      
-    })
-
+    await log.trace({ 'value': { 'value': { 'value': 0 } } })
+    await log.trace([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    await log.trace(new Error())
+    await log.trace('Hello', 'world!')
   } finally {
-    await client.exit()
+    await log.close()
   }
 
-  test.true(await FileSystem.pathExists(JsonPath))
+  test.true(await FileSystem.pathExists(LogPath))
 
   let content = null
-  content = await FileSystem.readFile(JsonPath, { 'encoding': 'utf-8' })
+  content = await FileSystem.readFile(LogPath, { 'encoding': 'utf-8' })
   content = content
     .split('\n')
     .filter((line) => Is.not.equal(line, ''))
 
   // test.log(content)
   test.assert(content.length >= 4)
-  test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}-\d{4} .+? \d+ TRACE trace$/.test(content[0]))
+  test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}-\d{4} .+? \d+ TRACE$/.test(content[0]))
   test.is(content[1], '{ value: { value: { value: 0 } } }')
-  test.is(content[3], '{ value: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, [length]: 10 ] }')
+  test.is(content[3], '[ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, [length]: 10 ]')
+  test.is(content[6], `    at ${FilePath.replace('/release/', '/source/')}:28:21`)
+  test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}-\d{4} .+? \d+ TRACE Hello, world!$/.test(content[7]))
+
+})
+
+Test.serial('FormattedLog(\'...\', { ... }) using \'hello-world.local\'', async (test) => {
+
+  let hostnameStub = Sinon
+    .stub(OS, 'hostname')
+    .returns('hello-world.local')
+  
+  try {
+
+    let log = new FormattedLog(LogPath, { 'level': 'trace' })
+
+    try {
+      await log.trace()
+    } finally {
+      await log.close()
+    }
+
+  } finally {
+    hostnameStub.restore()
+  }
+
+  test.true(await FileSystem.pathExists(LogPath))
+
+  let content = null
+  content = await FileSystem.readFile(LogPath, { 'encoding': 'utf-8' })
+  content = content
+    .split('\n')
+    .filter((line) => Is.not.equal(line, ''))
+
+  // test.log(content)
+  test.is(content.length, 1)
+  test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}-\d{4} hello-world \d+ TRACE$/.test(content[0]))
+
+})
+
+Test.serial('FormattedLog(\'...\', { ... }) using \'hello-world\'', async (test) => {
+
+  let hostnameStub = Sinon
+    .stub(OS, 'hostname')
+    .returns('hello-world')
+  
+  try {
+
+    let log = new FormattedLog(LogPath, { 'level': 'trace' })
+
+    try {
+      await log.trace()
+    } finally {
+      await log.close()
+    }
+
+  } finally {
+    hostnameStub.restore()
+  }
+
+  test.true(await FileSystem.pathExists(LogPath))
+
+  let content = null
+  content = await FileSystem.readFile(LogPath, { 'encoding': 'utf-8' })
+  content = content
+    .split('\n')
+    .filter((line) => Is.not.equal(line, ''))
+
+  // test.log(content)
+  test.is(content.length, 1)
+  test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}-\d{4} hello-world \d+ TRACE$/.test(content[0]))
 
 })

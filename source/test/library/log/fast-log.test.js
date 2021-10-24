@@ -1,49 +1,37 @@
-import { CreateLoggedProcess, WorkerClient } from '@virtualpatterns/mablung-worker'
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
 import { Is } from '@virtualpatterns/mablung-is'
 import Path from 'path'
 import Test from 'ava'
 
-// import { FastLog } from '../../../index.js'
+import { FastDestination, FastLog } from '../../../index.js'
 
 const FilePath = __filePath
-const LogPath = FilePath.replace(/\/release\//, '/data/').replace(/\.test\.c?js$/, '.log')
-const LoggedClient = CreateLoggedProcess(WorkerClient, LogPath)
-const Require = __require
-const WorkerPath = Require.resolve('./worker/fast-log.js')
-
-const JsonPath = FilePath.replace('/release/', '/data/').replace('.test.js', '.json')
+const LogPath = FilePath.replace('/release/', '/data/').replace('.test.js', '.json')
 
 Test.before(async () => {
   await FileSystem.ensureDir(Path.dirname(LogPath))
-  await FileSystem.remove(LogPath)
 })
 
 Test.beforeEach(() => {
-  return FileSystem.remove(JsonPath)
+  return FileSystem.remove(LogPath)
 })
 
 Test.serial('FastLog(\'...\', { ... })', async (test) => {
 
-  let client = new LoggedClient(WorkerPath)
+  let log = new FastLog(LogPath, { 'level': 'trace' }) // Log(LogPath, { 'level': 'trace' }) //
 
-  await client.whenReady()
+  test.true(log.destination instanceof FastDestination)
 
   try {
-
-    await test.notThrowsAsync(async () => {
-      await client.worker.createFastLog(JsonPath, { 'level': 'trace', 'handleExit': true })
-      await client.worker.trace('trace')
-    })
-
+    await log.trace('trace')
   } finally {
-    await client.exit()
+    await log.close()
   }
 
-  test.true(await FileSystem.pathExists(JsonPath))
+  test.true(await FileSystem.pathExists(LogPath))
 
   let content = null
-  content = await FileSystem.readFile(JsonPath, { 'encoding': 'utf-8' })
+  content = await FileSystem.readFile(LogPath, { 'encoding': 'utf-8' })
   content = content
     .split('\n')
     .filter((line) => Is.not.equal(line, ''))
@@ -51,6 +39,24 @@ Test.serial('FastLog(\'...\', { ... })', async (test) => {
 
   // test.log(content)
   test.assert(content.length >= 1)
-  test.is(content[0].msg, 'trace')
+  test.is(content[0].message, 'trace')
 
 })
+
+// Test.only('...', async (test) => {
+
+//   let log = new FastLog(LogPath, { 'level': 'trace' })
+
+//   try {
+
+//     for (let index = 0; index < 500; index++) {
+//       log.trace()
+//     }
+
+//   } finally {
+//     log.close()
+//   }
+
+//   test.pass()
+
+// })

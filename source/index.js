@@ -1,6 +1,11 @@
+export * from './library/destination.js'
+export * from './library/destination/console-destination.js'
+export * from './library/destination/fast-destination.js'
+export * from './library/destination/file-destination.js'
+export * from './library/destination/stream-destination.js'
 export * from './library/log.js'
 export * from './library/log/fast-log.js'
 export * from './library/log/formatted-log.js'
 export * from './library/log/short-formatted-log.js'
 
-export * from './library/error/log-option-not-supported-error.js'
+export * from './library/error/destination-invalid-level-error.js'

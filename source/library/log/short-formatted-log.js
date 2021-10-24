@@ -11,12 +11,10 @@ class ShortFormattedLog extends FormattedLog {
   get defaultOption() {
 
     return Configuration.merge(super.defaultOption, {
-      'prettyPrint': {
-        'inspect': {
-          'depth': 1,
-          'maxArrayLength': 5,
-          'showHidden': false
-        }
+      'inspect': {
+        'depth': 1,
+        'maxArrayLength': 5,
+        'showHidden': false
       }
     })
     

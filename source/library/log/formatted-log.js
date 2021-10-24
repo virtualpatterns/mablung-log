@@ -1,12 +1,9 @@
 import { Configuration } from '@virtualpatterns/mablung-configuration'
 import { DateTime } from 'luxon'
 import { Is } from '@virtualpatterns/mablung-is'
-import Clone from 'clone'
 import Utility from 'util'
 
 import { Log } from '../log.js'
-
-const MILLISECONDS_PER_NANOSECOND = 1000000
 
 class FormattedLog extends Log {
 
@@ -17,73 +14,61 @@ class FormattedLog extends Log {
   get defaultOption() {
 
     return Configuration.merge(super.defaultOption, {
-      'prettyPrint': {
-        'inspect': {
-          'depth': null,
-          'maxArrayLength': null,
-          'showHidden': true
-        },
-        'nestedKey': super.defaultOption.nestedKey
-      },
-      'prettifier': this.getPrettifier.bind(this)
+      'inspect': {
+        'depth': null,
+        'maxArrayLength': null,
+        'showHidden': true
+      }
     })
 
   }
 
-  getPrettifier(prettifierOption) {
-    return (function (option, data) { return this.format(data, option) }).bind(this, prettifierOption)
+  get inspectOption() {
+    return this.option.inspect
   }
 
-  format(data, option) {
-
-    let nestedData = null
-
-    if (option.nestedKey) {
-      nestedData = data[option.nestedKey] || {}
-    } else {
-
-      nestedData = Clone(data)
-
-      delete nestedData.time
-      delete nestedData.hostname
-      delete nestedData.pid
-      delete nestedData.level
-      delete nestedData[option.messageKey || 'msg']
-      delete nestedData.v
-
-    }
+  formatData(level, data) {
 
     let string = ''
     string += Utility.format(
-      '%s %s %s %s %s%s',
-      this.formatDateTime(data.time),
-      this.formatComputerName(data.hostname),
+      '%s %s %s %s',
+      this.formatDateTime(data.date),
+      this.formatComputerName(data.host),
       data.pid,
-      this.formatLevelName(data.level),
-      data[option.messageKey || 'msg'] || nestedData.message || '',
-      nestedData.duration ? ` in ${this.formatDuration(nestedData.duration)}` : '')
+      this.formatLevelName(data.level))
 
-    if (nestedData.stack) {
-      string += `\n\n${nestedData.stack}\n\n`
+    if (Is.propertyDefined(data, 'message')) {
+      string += ` ${Is.array(data.message) ? data.message.join(', ') : data.message}\n`
     } else {
-      
-      delete nestedData.duration
+      string += '\n'
+    }
+    
+    // if (Is.propertyDefined(data, 'error')) {
+    //   (Is.array(data.error) ? data.error : [ data.error ]).forEach((error) => {
+    //     string += `\n${error.stack}\n`
+    //   })
+    // }
 
-      if (Is.not.emptyObject(nestedData)) {
-        string += `\n\n${this.formatInspect(nestedData, option.inspect)}\n\n`
-      }
-      else {
-        string += '\n'
-      }
+    if (Is.propertyDefined(data, 'data')) {
+      (Is.array(data.data) ? data.data : [ data.data ]).forEach((data) => {
+        
+        switch (true) {
+          case data instanceof Error:
+            string += `\n${data.stack}\n`
+            break
+          default:
+            string += `\n${this.formatInspect(data)}\n`
+        }
 
+      })
     }
 
     return string
   
   }
 
-  formatDateTime(dateTime) {
-    return DateTime.fromMillis(dateTime).toFormat('yyyy.LL.dd-HH:mm:ss.SSSZZZ')
+  formatDateTime(date) {
+    return DateTime.fromJSDate(date).toFormat('yyyy.LL.dd-HH:mm:ss.SSSZZZ')
   }
 
   formatComputerName(longName) {
@@ -94,22 +79,18 @@ class FormattedLog extends Log {
     if (Is.not.null(match = pattern.exec(longName))) {
       let [ , shortName ] = match
       return shortName
+    } else {
+      return longName
     }
-
-    return longName
 
   }
   
-  formatLevelName(levelNumber) {
-    return this.getLevelName(levelNumber).toUpperCase().padStart(5)
+  formatLevelName(levelName) {
+    return levelName.toUpperCase().padStart(5)
   }
 
-  formatDuration(durationInNanoseconds) {
-    return `${durationInNanoseconds / MILLISECONDS_PER_NANOSECOND}ms`
-  }
-
-  formatInspect(data, option) {
-    return Utility.inspect(data, option)
+  formatInspect(data) {
+    return Utility.inspect(data, this.inspectOption)
   }
 
 }

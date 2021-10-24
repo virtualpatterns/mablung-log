@@ -5,11 +5,15 @@ Test.before(async (test) => {
 })
 
 ;[
+  'Destination',
+  'ConsoleDestination',
+  'FastDestination',
+  'FileDestination',
+  'StreamDestination',
   'Log',
   'FastLog',
   'FormattedLog',
-  'ShortFormattedLog',
-  'LogOptionNotSupportedError'
+  'ShortFormattedLog'
 ].forEach((name) => {
 
   Test(name, async (test) => {

@@ -1,52 +1,30 @@
 import '@virtualpatterns/mablung-source-map-support/install'
-import { FileSystem } from '@virtualpatterns/mablung-file-system'
-import Path from 'path'
-import { WorkerClient } from '@virtualpatterns/mablung-worker'
+import { CreateLoggedProcess, WorkerClient } from '@virtualpatterns/mablung-worker'
 
-import { ShortFormattedLog } from '../index.js'
+const FilePath = __filePath
+const JsonPath = FilePath.replace('/release/', '/data/').replace('.js', '.json')
+const LogPath = FilePath.replace('/release/', '/data/').replace('.js', '.log')
+const LoggedClient = CreateLoggedProcess(WorkerClient, LogPath)
+const Require = __require
+const WorkerPath = Require.resolve('../test/library/worker/log.js')
 
 async function main() {
 
   try {
 
-    let logPath0 = 'process/log/worker0.log'
-    await FileSystem.ensureDir(Path.dirname(logPath0))
-  
-    let log = new ShortFormattedLog(logPath0, { 'level': 'trace' })
-  
+    let client = new LoggedClient(WorkerPath)
+
+    await client.whenReady()
+
     try {
-      
-      let logPath1 = 'process/log/worker1.log'
-      await FileSystem.ensureDir(Path.dirname(logPath1))
-      
-      let worker = new WorkerClient()
-      worker.writeTo(logPath1)
-
-      worker.on._formatReturnValue = function _formatReturnValue() {
-        return [ {}, '' ]
-      }
-
-      worker.off._formatReturnValue = function _formatReturnValue() {
-        return [ {}, '' ]
-      }
-  
-      worker = log.createProxy(worker)
-  
-      try {
-        console.dir(await worker.module.getPid())
-      } finally {
-        await worker.exit()
-      }
-    
+      // await client.worker.createLog(JsonPath, { 'level': 'trace', 'handleExit': true })
     } finally {
-      // await FileSystem.remove(logPath0)
+      await client.exit()
     }
-  
+
   } catch (error) {
     console.error(error)
   }
-  
-  await new Promise((resolve) => setTimeout(resolve, 5000))
 
 }
 
