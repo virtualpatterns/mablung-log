@@ -16,7 +16,7 @@
     "url": "https://github.com/virtualpatterns/mablung-log"
   },
   "type": "module",
-  "version": "0.0.1-41",
+  "version": "0.0.1-42",
   "dependencies": {
     "@virtualpatterns/mablung-configuration": "0.0.2-38",
     "@virtualpatterns/mablung-file-system": "0.0.2-21",
