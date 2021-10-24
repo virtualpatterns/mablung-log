@@ -68,7 +68,7 @@ class FormattedLog extends Log {
   }
 
   formatDateTime(date) {
-    return DateTime.fromJSDate(date).toFormat('yyyy.LL.dd-HH:mm:ss.SSSZZZ')
+    return DateTime.fromJSDate(date).toFormat('yyyy.LL.dd-HH:mm:ss.SSSZZ')
   }
 
   formatComputerName(longName) {
