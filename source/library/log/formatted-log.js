@@ -54,10 +54,10 @@ class FormattedLog extends Log {
         
         switch (true) {
           case data instanceof Error:
-            string += `\n${data.stack}\n`
+            string += `\n${data.stack}\n\n`
             break
           default:
-            string += `\n${this.formatInspect(data)}\n`
+            string += `\n${this.formatInspect(data)}\n\n`
         }
 
       })

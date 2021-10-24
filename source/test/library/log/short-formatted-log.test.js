@@ -1,5 +1,4 @@
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
-import { Is } from '@virtualpatterns/mablung-is'
 import Path from 'path'
 import Test from 'ava'
 
@@ -33,12 +32,10 @@ Test.serial('ShortFormattedLog(\'...\', { ... })', async (test) => {
   content = await FileSystem.readFile(LogPath, { 'encoding': 'utf-8' })
   content = content
     .split('\n')
-    .filter((line) => Is.not.equal(line, ''))
 
   // test.log(content)
-  test.assert(content.length >= 4)
   test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}-\d{4} .+? \d+ TRACE trace$/.test(content[0]))
-  test.is(content[1], '{ value: { value: [Object] } }')
-  test.is(content[3], '[ 0, 1, 2, 3, 4, ... 5 more items ]')
+  test.is(content[2], '{ value: { value: [Object] } }')
+  test.is(content[6], '[ 0, 1, 2, 3, 4, ... 5 more items ]')
 
 })
