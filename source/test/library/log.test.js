@@ -197,7 +197,7 @@ Test.serial('Log(\'...\', { handleExit }) when not required', async (test) => {
 
 Test.serial('Log(\'...\', { ... }) volume', async (test) => {
 
-  let count = 100000
+  let count = 1000
   let log = new Log(JsonPath, { 'level': 'trace' })
 
   try {
