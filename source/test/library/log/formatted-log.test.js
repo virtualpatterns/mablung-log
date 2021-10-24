@@ -8,6 +8,7 @@ import Test from 'ava'
 import { FormattedLog } from '../../../index.js'
 
 const FilePath = __filePath
+const FileMapPath = `${FilePath}.map`
 const LogPath = FilePath.replace('/release/', '/data/').replace('.test.js', '.log')
 
 Test.before(async () => {
@@ -44,7 +45,13 @@ Test.serial('FormattedLog(\'...\', { ... })', async (test) => {
   test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}-\d{4} .+? \d+ TRACE$/.test(content[0]))
   test.is(content[1], '{ value: { value: { value: 0 } } }')
   test.is(content[3], '[ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, [length]: 10 ]')
-  test.is(content[6], `    at ${FilePath.replace('/release/', '/source/')}:28:21`)
+  
+  if (await FileSystem.pathExists(FileMapPath)) {
+    test.is(content[6], `    at ${FilePath.replace('/release/', '/source/')}:29:21`)
+  } else {
+    test.log(`'${Path.relative('', FileMapPath)}' does not exist!`)
+  }
+
   test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}-\d{4} .+? \d+ TRACE Hello, world!$/.test(content[7]))
 
 })
