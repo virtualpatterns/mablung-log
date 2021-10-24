@@ -34,7 +34,7 @@ Test.serial('ShortFormattedLog(\'...\', { ... })', async (test) => {
     .split('\n')
 
   // test.log(content)
-  test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}-\d{2}:\d{2} .+? \d+ TRACE trace$/.test(content[0]))
+  test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}[-+]\d{2}:\d{2} .+? \d+ TRACE trace$/.test(content[0]))
   test.is(content[2], '{ value: { value: [Object] } }')
   test.is(content[6], '[ 0, 1, 2, 3, 4, ... 5 more items ]')
 

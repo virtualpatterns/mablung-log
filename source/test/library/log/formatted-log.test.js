@@ -39,7 +39,7 @@ Test.serial('FormattedLog(\'...\', { ... })', async (test) => {
     .split('\n')
 
   // test.log(content)
-  test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}-\d{2}:\d{2} .+? \d+ TRACE$/.test(content[0]))
+  test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}[-+]\d{2}:\d{2} .+? \d+ TRACE$/.test(content[0]))
   test.is(content[2], '{ value: { value: { value: 0 } } }')
   test.is(content[6], '[ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, [length]: 10 ]')
   
@@ -49,7 +49,7 @@ Test.serial('FormattedLog(\'...\', { ... })', async (test) => {
     test.log(`'${Path.relative('', FileMapPath)}' does not exist!`)
   }
 
-  test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}-\d{2}:\d{2} .+? \d+ TRACE Hello, world!$/.test(content[13]))
+  test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}[-+]\d{2}:\d{2} .+? \d+ TRACE Hello, world!$/.test(content[13]))
 
 })
 
@@ -81,7 +81,7 @@ Test.serial('FormattedLog(\'...\', { ... }) using \'hello-world.local\'', async 
     .split('\n')
 
   // test.log(content)
-  test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}-\d{2}:\d{2} hello-world \d+ TRACE$/.test(content[0]))
+  test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}[-+]\d{2}:\d{2} hello-world \d+ TRACE$/.test(content[0]))
 
 })
 
@@ -113,6 +113,6 @@ Test.serial('FormattedLog(\'...\', { ... }) using \'hello-world\'', async (test)
     .split('\n')
 
   // test.log(content)
-  test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}-\d{2}:\d{2} hello-world \d+ TRACE$/.test(content[0]))
+  test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}[-+]\d{2}:\d{2} hello-world \d+ TRACE$/.test(content[0]))
 
 })
