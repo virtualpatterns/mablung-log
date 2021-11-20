@@ -1,10 +1,10 @@
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
+import { ShortFormattedLog } from '@virtualpatterns/mablung-log'
 import Path from 'path'
 import Test from 'ava'
 
-import { ShortFormattedLog } from '../../../index.js'
-
 const FilePath = __filePath
+
 const LogPath = FilePath.replace('/release/', '/data/').replace('.test.js', '.log')
 
 Test.before(async () => {

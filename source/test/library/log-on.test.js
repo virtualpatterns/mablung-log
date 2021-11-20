@@ -4,9 +4,10 @@ import Path from 'path'
 import Test from 'ava'
 
 const FilePath = __filePath
+const Require = __require
+
 const LogPath = FilePath.replace('/release/', '/data/').replace(/\.test\.c?js$/, '.log')
 const LoggedClient = CreateLoggedProcess(WorkerClient, LogPath)
-const Require = __require
 const WorkerPath = Require.resolve('./worker/log-on.js')
 
 Test.before(async () => {

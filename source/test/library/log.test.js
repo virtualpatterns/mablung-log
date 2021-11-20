@@ -1,21 +1,20 @@
 import { Console } from 'console'
 import { CreateLoggedProcess, WorkerClient } from '@virtualpatterns/mablung-worker'
+import { Destination, Log } from '@virtualpatterns/mablung-log'
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
 import { Is } from '@virtualpatterns/mablung-is'
 import Path from 'path'
 import Test from 'ava'
 
-import { Destination, Log } from '../../index.js'
-
 const FilePath = __filePath
+const Require = __require
+
 const LogPath = FilePath.replace('/release/', '/data/').replace(/\.test\.c?js$/, '.log')
 const LoggedClient = CreateLoggedProcess(WorkerClient, LogPath)
-const Require = __require
-const WorkerPath = Require.resolve('./worker/log.js')
-
 const JsonPath = FilePath.replace('/release/', '/data/').replace('.test.js', '.json')
 const JsonPathAfterSIGHUP = JsonPath.replace('.json', '-after-sighup.json')
 const JsonPathBeforeSIGHUP = JsonPath.replace('.json', '-before-sighup.json')
+const WorkerPath = Require.resolve('./worker/log.js')
 
 const Process = process
 

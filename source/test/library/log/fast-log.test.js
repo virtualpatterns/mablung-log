@@ -1,11 +1,11 @@
+import { FastDestination, FastLog } from '@virtualpatterns/mablung-log'
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
 import { Is } from '@virtualpatterns/mablung-is'
 import Path from 'path'
 import Test from 'ava'
 
-import { FastDestination, FastLog } from '../../../index.js'
-
 const FilePath = __filePath
+
 const LogPath = FilePath.replace('/release/', '/data/').replace('.test.js', '.json')
 
 Test.before(async () => {

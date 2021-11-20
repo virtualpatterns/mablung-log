@@ -1,12 +1,12 @@
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
+import { FormattedLog } from '@virtualpatterns/mablung-log'
 import OS from 'os'
 import Path from 'path'
 import Sinon from 'sinon'
 import Test from 'ava'
 
-import { FormattedLog } from '../../../index.js'
-
 const FilePath = __filePath
+
 const FileMapPath = `${FilePath}.map`
 const LogPath = FilePath.replace('/release/', '/data/').replace('.test.js', '.log')
 

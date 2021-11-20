@@ -1,15 +1,15 @@
 class Lock {
 
   constructor() {
-    this._open = true
+    this.open = true
   }
 
   get isOpen() {
     
     try {
-      return this._open
+      return this.open
     } finally {
-      this._open = false
+      this.open = false
     }
 
   }

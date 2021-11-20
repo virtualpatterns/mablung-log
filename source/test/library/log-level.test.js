@@ -1,11 +1,11 @@
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
 import { Is } from '@virtualpatterns/mablung-is'
+import { Log } from '@virtualpatterns/mablung-log'
 import Path from 'path'
 import Test from 'ava'
 
-import { Log } from '../../index.js'
-
 const FilePath = __filePath
+
 const JsonPath = FilePath.replace('/release/', '/data/').replace('.test.js', '.json')
 
 Test.before(async () => {

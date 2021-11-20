@@ -1,8 +1,7 @@
+import { ConsoleDestination, DestinationInvalidLevelError } from '@virtualpatterns/mablung-log'
 import { Console } from 'console'
 import Sinon from 'sinon'
 import Test from 'ava'
-
-import { ConsoleDestination, DestinationInvalidLevelError } from '../../../index.js'
 
 const Process = process
 

@@ -1,10 +1,10 @@
+import { FastDestination } from '@virtualpatterns/mablung-log'
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
 import Path from 'path'
 import Test from 'ava'
 
-import { FastDestination } from '../../../index.js'
-
 const FilePath = __filePath
+
 const LogPath = FilePath.replace('/release/', '/data/').replace(/\.test\.c?js$/, '.log')
 
 const Process = process
