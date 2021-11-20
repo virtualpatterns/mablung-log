@@ -43,12 +43,7 @@ Test.serial('FormattedLog(\'...\', { ... })', async (test) => {
   test.is(content[2], '{ value: { value: { value: 0 } } }')
   test.is(content[6], '[ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, [length]: 10 ]')
   
-  if (await FileSystem.pathExists(FileMapPath)) {
-    test.is(content[11], `    at ${FilePath.replace('/release/', '/source/')}:28:21`)
-  /* c8 ignore next 3 */
-  } else {
-    test.log(`'${Path.relative('', FileMapPath)}' does not exist!`)
-  }
+  ;((await FileSystem.pathExists(FileMapPath)) ? test.is : test.is.skip )(content[11], `    at file://${FilePath.replace('/release/', '/source/')}:28:21`)
 
   test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}[-+]\d{2}:\d{2} .+? \d+ TRACE Hello, world!$/.test(content[13]))
 

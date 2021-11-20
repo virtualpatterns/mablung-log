@@ -1,8 +1,9 @@
 import { Console } from 'console'
-import { CreateLoggedProcess, WorkerClient } from '@virtualpatterns/mablung-worker'
+import { CreateLoggedProcess } from '@virtualpatterns/mablung-worker/test'
 import { Destination, Log } from '@virtualpatterns/mablung-log'
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
 import { Is } from '@virtualpatterns/mablung-is'
+import { WorkerClient } from '@virtualpatterns/mablung-worker'
 import Path from 'path'
 import Test from 'ava'
 
