@@ -10,7 +10,7 @@ import Test from 'ava'
 const FilePath = __filePath
 const Require = __require
 
-const LogPath = FilePath.replace('/release/', '/data/').replace(/\.test\.c?js$/, '.log')
+const LogPath = FilePath.replace('/release/', '/data/').replace('.test.js', '.log')
 const LoggedClient = CreateLoggedProcess(WorkerClient, LogPath)
 const JsonPath = FilePath.replace('/release/', '/data/').replace('.test.js', '.json')
 const JsonPathAfterSIGHUP = JsonPath.replace('.json', '-after-sighup.json')
@@ -21,7 +21,7 @@ const Process = process
 
 Test.before(async () => {
   await FileSystem.ensureDir(Path.dirname(LogPath))
-  await FileSystem.remove(LogPath)
+  return FileSystem.remove(LogPath)
 })
 
 Test.beforeEach(() => {
@@ -145,6 +145,14 @@ Test.serial('Log(\'...\', { handleExit }) when not required', async (test) => {
 })
   
 ;(Is.windows() ? Test.serial.skip : Test.serial)('Log(\'...\', { handleRotate })', async (test) => {
+
+  // Error {
+  //   code: 'ENOENT',
+  //   errno: -2,
+  //   path: '/Volumes/Data/Users/fficnar/Projects/mablung-log/data/test/library/log.json',
+  //   syscall: 'lstat',
+  //   message: 'ENOENT: no such file or directory, lstat \'/Volumes/Data/Users/fficnar/Projects/mablung-log/data/test/library/log.json\'',
+  // }
 
   let client = new LoggedClient(WorkerPath)
 
