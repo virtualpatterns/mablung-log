@@ -1,7 +1,7 @@
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
 import { Is } from '@virtualpatterns/mablung-is'
 import { Log } from '@virtualpatterns/mablung-log'
-import Path from 'path'
+import { Path } from '@virtualpatterns/mablung-path'
 import Test from 'ava'
 
 const FilePath = __filePath

@@ -1,24 +1,30 @@
+import { CreateRandomId } from '@virtualpatterns/mablung-worker/test'
 import { FastDestination, FastLog } from '@virtualpatterns/mablung-log'
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
 import { Is } from '@virtualpatterns/mablung-is'
-import Path from 'path'
+import { Path } from '@virtualpatterns/mablung-path'
 import Test from 'ava'
 
 const FilePath = __filePath
 
-const LogPath = FilePath.replace('/release/', '/data/').replace('.test.js', '.json')
+const DataPath = FilePath.replace('/release/', '/data/').replace(/\.test\.c?js/, '')
 
-Test.before(async () => {
-  await FileSystem.ensureDir(Path.dirname(LogPath))
+Test.before(() => {
+  return FileSystem.emptyDir(DataPath)
 })
 
-Test.beforeEach(() => {
-  return FileSystem.remove(LogPath)
+Test.beforeEach(async (test) => {
+
+  let id = await CreateRandomId()
+  let logPath = Path.resolve(DataPath, `${id}.log`)
+
+  test.context.logPath = logPath
+
 })
 
-Test.serial('FastLog(\'...\', { ... })', async (test) => {
+Test('FastLog(\'...\', { ... })', async (test) => {
 
-  let log = new FastLog(LogPath, { 'level': 'trace' }) // Log(LogPath, { 'level': 'trace' }) //
+  let log = new FastLog(test.context.logPath, { 'level': 'trace' }) // Log(test.context.logPath, { 'level': 'trace' }) //
 
   test.true(log.destination instanceof FastDestination)
 
@@ -28,10 +34,10 @@ Test.serial('FastLog(\'...\', { ... })', async (test) => {
     await log.close()
   }
 
-  test.true(await FileSystem.pathExists(LogPath))
+  test.true(await FileSystem.pathExists(test.context.logPath))
 
   let content = null
-  content = await FileSystem.readFile(LogPath, { 'encoding': 'utf-8' })
+  content = await FileSystem.readFile(test.context.logPath, { 'encoding': 'utf-8' })
   content = content
     .split('\n')
     .filter((line) => Is.not.equal(line, ''))
@@ -45,7 +51,7 @@ Test.serial('FastLog(\'...\', { ... })', async (test) => {
 
 // Test.only('...', async (test) => {
 
-//   let log = new FastLog(LogPath, { 'level': 'trace' })
+//   let log = new FastLog(test.context.logPath, { 'level': 'trace' })
 
 //   try {
 

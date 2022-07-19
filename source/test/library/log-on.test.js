@@ -1,24 +1,30 @@
-import { CreateLoggedProcess } from '@virtualpatterns/mablung-worker/test'
+import { CreateRandomId, LoggedWorkerClient } from '@virtualpatterns/mablung-worker/test'
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
-import { WorkerClient } from '@virtualpatterns/mablung-worker'
-import Path from 'path'
+import { Path } from '@virtualpatterns/mablung-path'
 import Test from 'ava'
 
 const FilePath = __filePath
-const Require = __require
+const FolderPath = Path.dirname(FilePath)
 
-const LogPath = FilePath.replace('/release/', '/data/').replace(/\.test\.c?js$/, '.log')
-const LoggedClient = CreateLoggedProcess(WorkerClient, LogPath)
-const WorkerPath = Require.resolve('./worker/log-on.js')
+const DataPath = FilePath.replace('/release/', '/data/').replace(/\.test\.c?js/, '')
+const WorkerPath = Path.resolve(FolderPath, 'worker/log-on.js')
 
-Test.before(async () => {
-  await FileSystem.ensureDir(Path.dirname(LogPath))
-  await FileSystem.remove(LogPath)
+Test.before(() => {
+  return FileSystem.emptyDir(DataPath)
+})
+
+Test.beforeEach(async (test) => {
+
+  let id = await CreateRandomId()
+  let logPath = Path.resolve(DataPath, `${id}.log`)
+
+  test.context.logPath = logPath
+
 })
 
 Test('onRotate() throws Error', async (test) => {
 
-  let client = new LoggedClient(WorkerPath)
+  let client = new LoggedWorkerClient(test.context.logPath, WorkerPath)
 
   await client.whenReady()
 
@@ -32,7 +38,7 @@ Test('onRotate() throws Error', async (test) => {
 
 Test('onBeforeExit() throws Error', async (test) => {
 
-  let client = new LoggedClient(WorkerPath)
+  let client = new LoggedWorkerClient(test.context.logPath, WorkerPath)
 
   await client.whenReady()
 

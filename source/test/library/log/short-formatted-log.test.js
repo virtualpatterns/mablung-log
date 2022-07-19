@@ -1,23 +1,29 @@
+import { CreateRandomId } from '@virtualpatterns/mablung-worker/test'
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
 import { ShortFormattedLog } from '@virtualpatterns/mablung-log'
-import Path from 'path'
+import { Path } from '@virtualpatterns/mablung-path'
 import Test from 'ava'
 
 const FilePath = __filePath
 
-const LogPath = FilePath.replace('/release/', '/data/').replace('.test.js', '.log')
+const DataPath = FilePath.replace('/release/', '/data/').replace(/\.test\.c?js/, '')
 
-Test.before(async () => {
-  await FileSystem.ensureDir(Path.dirname(LogPath))
+Test.before(() => {
+  return FileSystem.emptyDir(DataPath)
 })
 
-Test.beforeEach(() => {
-  return FileSystem.remove(LogPath)
+Test.beforeEach(async (test) => {
+
+  let id = await CreateRandomId()
+  let logPath = Path.resolve(DataPath, `${id}.log`)
+
+  test.context.logPath = logPath
+
 })
 
-Test.serial('ShortFormattedLog(\'...\', { ... })', async (test) => {
+Test('ShortFormattedLog(\'...\', { ... })', async (test) => {
 
-  let log = new ShortFormattedLog(LogPath, { 'level': 'trace' }) // Log(LogPath, { 'level': 'trace' }) //
+  let log = new ShortFormattedLog(test.context.logPath, { 'level': 'trace' }) // Log(test.context.logPath, { 'level': 'trace' }) //
 
   try {
     await log.trace({ 'value': { 'value': { 'value': 0 } } }, 'trace')
@@ -26,10 +32,10 @@ Test.serial('ShortFormattedLog(\'...\', { ... })', async (test) => {
     await log.close()
   }
 
-  test.true(await FileSystem.pathExists(LogPath))
+  test.true(await FileSystem.pathExists(test.context.logPath))
 
   let content = null
-  content = await FileSystem.readFile(LogPath, { 'encoding': 'utf-8' })
+  content = await FileSystem.readFile(test.context.logPath, { 'encoding': 'utf-8' })
   content = content
     .split('\n')
 

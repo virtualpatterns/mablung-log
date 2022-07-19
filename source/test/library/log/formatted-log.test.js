@@ -1,26 +1,31 @@
+import { CreateRandomId } from '@virtualpatterns/mablung-worker/test'
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
 import { FormattedLog } from '@virtualpatterns/mablung-log'
+import { Path } from '@virtualpatterns/mablung-path'
 import OS from 'os'
-import Path from 'path'
 import Sinon from 'sinon'
 import Test from 'ava'
 
 const FilePath = __filePath
 
-const FileMapPath = `${FilePath}.map`
-const LogPath = FilePath.replace('/release/', '/data/').replace('.test.js', '.log')
+const DataPath = FilePath.replace('/release/', '/data/').replace(/\.test\.c?js/, '')
 
-Test.before(async () => {
-  await FileSystem.ensureDir(Path.dirname(LogPath))
+Test.before(() => {
+  return FileSystem.emptyDir(DataPath)
 })
 
-Test.beforeEach(() => {
-  return FileSystem.remove(LogPath)
+Test.beforeEach(async (test) => {
+
+  let id = await CreateRandomId()
+  let logPath = Path.resolve(DataPath, `${id}.log`)
+
+  test.context.logPath = logPath
+
 })
 
-Test.serial('FormattedLog(\'...\', { ... })', async (test) => {
+Test('FormattedLog(\'...\', { ... })', async (test) => {
 
-  let log = new FormattedLog(LogPath, { 'level': 'trace' })
+  let log = new FormattedLog(test.context.logPath, { 'level': 'trace' })
 
   try {
     await log.trace({ 'value': { 'value': { 'value': 0 } } })
@@ -31,10 +36,10 @@ Test.serial('FormattedLog(\'...\', { ... })', async (test) => {
     await log.close()
   }
 
-  test.true(await FileSystem.pathExists(LogPath))
+  test.true(await FileSystem.pathExists(test.context.logPath))
 
   let content = null
-  content = await FileSystem.readFile(LogPath, { 'encoding': 'utf-8' })
+  content = await FileSystem.readFile(test.context.logPath, { 'encoding': 'utf-8' })
   content = content
     .split('\n')
 
@@ -42,10 +47,8 @@ Test.serial('FormattedLog(\'...\', { ... })', async (test) => {
   test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}[-+]\d{2}:\d{2} .+? \d+ TRACE$/.test(content[0]))
   test.is(content[2], '{ value: { value: { value: 0 } } }')
   test.is(content[6], '[ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, [length]: 10 ]')
-  
-  ;((await FileSystem.pathExists(FileMapPath)) ? test.is : test.is.skip )(content[11], `    at file://${FilePath.replace('/release/', '/source/')}:28:21`)
 
-  test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}[-+]\d{2}:\d{2} .+? \d+ TRACE Hello, world!$/.test(content[13]))
+  test.assert(/^\d{4}\.\d{2}\.\d{2}-\d{2}:\d{2}:\d{2}\.\d{3}[-+]\d{2}:\d{2} .+? \d+ TRACE Hello, world!$/.test(content[17]))
 
 })
 
@@ -57,7 +60,7 @@ Test.serial('FormattedLog(\'...\', { ... }) using \'hello-world.local\'', async 
   
   try {
 
-    let log = new FormattedLog(LogPath, { 'level': 'trace' })
+    let log = new FormattedLog(test.context.logPath, { 'level': 'trace' })
 
     try {
       await log.trace()
@@ -69,10 +72,10 @@ Test.serial('FormattedLog(\'...\', { ... }) using \'hello-world.local\'', async 
     hostnameStub.restore()
   }
 
-  test.true(await FileSystem.pathExists(LogPath))
+  test.true(await FileSystem.pathExists(test.context.logPath))
 
   let content = null
-  content = await FileSystem.readFile(LogPath, { 'encoding': 'utf-8' })
+  content = await FileSystem.readFile(test.context.logPath, { 'encoding': 'utf-8' })
   content = content
     .split('\n')
 
@@ -89,7 +92,7 @@ Test.serial('FormattedLog(\'...\', { ... }) using \'hello-world\'', async (test)
   
   try {
 
-    let log = new FormattedLog(LogPath, { 'level': 'trace' })
+    let log = new FormattedLog(test.context.logPath, { 'level': 'trace' })
 
     try {
       await log.trace()
@@ -101,10 +104,10 @@ Test.serial('FormattedLog(\'...\', { ... }) using \'hello-world\'', async (test)
     hostnameStub.restore()
   }
 
-  test.true(await FileSystem.pathExists(LogPath))
+  test.true(await FileSystem.pathExists(test.context.logPath))
 
   let content = null
-  content = await FileSystem.readFile(LogPath, { 'encoding': 'utf-8' })
+  content = await FileSystem.readFile(test.context.logPath, { 'encoding': 'utf-8' })
   content = content
     .split('\n')
 

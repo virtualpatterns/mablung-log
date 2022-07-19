@@ -1,36 +1,49 @@
 import { Console } from 'console'
-import { CreateLoggedProcess } from '@virtualpatterns/mablung-worker/test'
+import { CreateRandomId, LoggedWorkerClient } from '@virtualpatterns/mablung-worker/test'
 import { Destination, Log } from '@virtualpatterns/mablung-log'
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
 import { Is } from '@virtualpatterns/mablung-is'
-import { WorkerClient } from '@virtualpatterns/mablung-worker'
-import Path from 'path'
+import { Path } from '@virtualpatterns/mablung-path'
+import { Process } from '@virtualpatterns/mablung-process'
 import Test from 'ava'
 
 const FilePath = __filePath
-const Require = __require
+const FolderPath = Path.dirname(FilePath)
 
-const LogPath = FilePath.replace('/release/', '/data/').replace('.test.js', '.log')
-const LoggedClient = CreateLoggedProcess(WorkerClient, LogPath)
-const JsonPath = FilePath.replace('/release/', '/data/').replace('.test.js', '.json')
-const JsonPathAfterSIGHUP = JsonPath.replace('.json', '-after-sighup.json')
-const JsonPathBeforeSIGHUP = JsonPath.replace('.json', '-before-sighup.json')
-const WorkerPath = Require.resolve('./worker/log.js')
+const DataPath = FilePath.replace('/release/', '/data/').replace(/\.test\.c?js/, '')
+const WorkerPath = Path.resolve(FolderPath, 'worker/log.js')
 
-const Process = process
-
-Test.before(async () => {
-  await FileSystem.ensureDir(Path.dirname(LogPath))
-  return FileSystem.remove(LogPath)
+Test.before(() => {
+  return FileSystem.emptyDir(DataPath)
 })
 
-Test.beforeEach(() => {
-  return Promise.all([
-    FileSystem.remove(JsonPath),
-    FileSystem.remove(JsonPathAfterSIGHUP),
-    FileSystem.remove(JsonPathBeforeSIGHUP)
-  ])
+Test.beforeEach(async (test) => {
+
+  let id = await CreateRandomId()
+
+  let jsonPath = Path.resolve(DataPath, `${id}.json`)
+  let jsonPathAfterSIGHUP = Path.resolve(DataPath, `${id}-after-sighup.json`)
+  let jsonPathBeforeSIGHUP = Path.resolve(DataPath, `${id}-before-sighup.json`)
+
+  let logPath = Path.resolve(DataPath, `${id}.log`)
+
+  test.context.jsonPath = jsonPath
+  test.context.jsonPathAfterSIGHUP = jsonPathAfterSIGHUP
+  test.context.jsonPathBeforeSIGHUP = jsonPathBeforeSIGHUP
+
+  test.context.logPath = logPath
+
+  // test.log(`test.context.logPath = '${Path.relative('', test.context.logPath)}'`)
+
 })
+
+// Test.beforeEach(() => {
+//   return Promise.all([
+//     FileSystem.remove(test.context.jsonPath),
+//     FileSystem.remove(test.context.jsonPathAfterSIGHUP),
+//     FileSystem.remove(test.context.jsonPathBeforeSIGHUP)
+//   ])
+// })
 
 Test('Log()', (test) => {
   test.notThrows(() => { new Log() })
@@ -56,7 +69,7 @@ Test('Log(Stream.Writable)', (test) => {
 })
 
 Test('Log(\'...\')', (test) => {
-  return test.notThrowsAsync((new Log(JsonPath)).close())
+  return test.notThrowsAsync((new Log(test.context.jsonPath)).close())
 })
 
 Test('Log({ ... })', (test) => {
@@ -87,7 +100,7 @@ Test('Log(Stream.Writable, { ... })', (test) => {
 })
 
 Test('Log(\'...\', { ... })', (test) => {
-  return test.notThrowsAsync((new Log(JsonPath, {})).close())
+  return test.notThrowsAsync((new Log(test.context.jsonPath, {})).close())
 })
 
 Test('Log(..., { ... })', (test) => {
@@ -96,18 +109,18 @@ Test('Log(..., { ... })', (test) => {
 
 Test.serial('Log(\'...\', { handleExit })', async (test) => {
 
-  let client = new LoggedClient(WorkerPath)
+  let client = new LoggedWorkerClient(test.context.logPath, WorkerPath)
 
   await client.whenReady()
 
   try {
-    await client.worker.openLog(JsonPath, { 'level': 'trace', 'handleExit': true })
+    await client.worker.openLog(test.context.jsonPath, { 'level': 'trace', 'handleExit': true })
   } finally {
     await client.exit()
   }
 
   let content = null
-  content = await FileSystem.readFile(JsonPath, { 'encoding': 'utf-8' })
+  content = await FileSystem.readFile(test.context.jsonPath, { 'encoding': 'utf-8' })
   content = content
     .split('\n')
     .filter((line) => Is.not.equal(line, ''))
@@ -121,19 +134,19 @@ Test.serial('Log(\'...\', { handleExit })', async (test) => {
 
 Test.serial('Log(\'...\', { handleExit }) when not required', async (test) => {
 
-  let client = new LoggedClient(WorkerPath)
+  let client = new LoggedWorkerClient(test.context.logPath, WorkerPath)
 
   await client.whenReady()
 
   try {
-    await client.worker.openLog(JsonPath, { 'level': 'trace', 'handleExit': true })
+    await client.worker.openLog(test.context.jsonPath, { 'level': 'trace', 'handleExit': true })
     await client.worker.closeLog()
   } finally {
     await client.exit()
   }
 
   let content = null
-  content = await FileSystem.readFile(JsonPath, { 'encoding': 'utf-8' })
+  content = await FileSystem.readFile(test.context.jsonPath, { 'encoding': 'utf-8' })
   content = content
     .split('\n')
     .filter((line) => Is.not.equal(line, ''))
@@ -144,7 +157,7 @@ Test.serial('Log(\'...\', { handleExit }) when not required', async (test) => {
 
 })
   
-;(Is.windows() ? Test.serial.skip : Test.serial)('Log(\'...\', { handleRotate })', async (test) => {
+;(Is.windows() ? Test.skip : Test.serial)('Log(\'...\', { handleRotate })', async (test) => {
 
   // Error {
   //   code: 'ENOENT',
@@ -154,24 +167,24 @@ Test.serial('Log(\'...\', { handleExit }) when not required', async (test) => {
   //   message: 'ENOENT: no such file or directory, lstat \'/Volumes/Data/Users/fficnar/Projects/mablung-log/data/test/library/log.json\'',
   // }
 
-  let client = new LoggedClient(WorkerPath)
+  let client = new LoggedWorkerClient(test.context.logPath, WorkerPath)
 
   await client.whenReady()
 
   try {
 
-    await client.worker.openLog(JsonPath, { 'level': 'trace', 'handleRotate': [ 'SIGHUP' ] })
+    await client.worker.openLog(test.context.jsonPath, { 'level': 'trace', 'handleRotate': [ 'SIGHUP' ] })
     
     try {
 
       await client.worker.trace('before SIGHUP')
-      await FileSystem.move(JsonPath, JsonPathBeforeSIGHUP)
+      await FileSystem.move(test.context.jsonPath, test.context.jsonPathBeforeSIGHUP)
 
       await client.send('SIGHUP')
-      await FileSystem.whenExists(5000, 500, JsonPath)
+      await FileSystem.whenExists(3000, 500, test.context.jsonPath)
 
       await client.worker.trace('after SIGHUP')
-      await FileSystem.move(JsonPath, JsonPathAfterSIGHUP)
+      await FileSystem.move(test.context.jsonPath, test.context.jsonPathAfterSIGHUP)
 
     } finally {
       await client.worker.closeLog()
@@ -182,7 +195,7 @@ Test.serial('Log(\'...\', { handleExit }) when not required', async (test) => {
   }
 
   let content = null
-  content = await FileSystem.readFile(JsonPathBeforeSIGHUP, { 'encoding': 'utf-8' })
+  content = await FileSystem.readFile(test.context.jsonPathBeforeSIGHUP, { 'encoding': 'utf-8' })
   content = content
     .split('\n')
     .filter((line) => Is.not.equal(line, ''))
@@ -192,7 +205,7 @@ Test.serial('Log(\'...\', { handleExit }) when not required', async (test) => {
   test.is(content[0].message, 'before SIGHUP')
   test.is(content[1].message, 'Log#onRotate(\'SIGHUP\')')
 
-  content = await FileSystem.readFile(JsonPathAfterSIGHUP, { 'encoding': 'utf-8' })
+  content = await FileSystem.readFile(test.context.jsonPathAfterSIGHUP, { 'encoding': 'utf-8' })
   content = content
     .split('\n')
     .filter((line) => Is.not.equal(line, ''))
@@ -203,10 +216,10 @@ Test.serial('Log(\'...\', { handleExit }) when not required', async (test) => {
 
 })
 
-Test.serial('Log(\'...\', { ... }) volume', async (test) => {
+Test('Log(\'...\', { ... }) volume', async (test) => {
 
   let count = 1000
-  let log = new Log(JsonPath, { 'level': 'trace' })
+  let log = new Log(test.context.jsonPath, { 'level': 'trace' })
 
   try {
     for (let index = 0; index < count; index++) { log.trace() }
@@ -215,7 +228,7 @@ Test.serial('Log(\'...\', { ... }) volume', async (test) => {
   }
 
   let content = null
-  content = await FileSystem.readFile(JsonPath, { 'encoding': 'utf-8' })
+  content = await FileSystem.readFile(test.context.jsonPath, { 'encoding': 'utf-8' })
   content = content
     .split('\n')
     .filter((line) => Is.not.equal(line, ''))

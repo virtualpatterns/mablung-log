@@ -1,9 +1,8 @@
 import { ConsoleDestination, DestinationInvalidLevelError } from '@virtualpatterns/mablung-log'
 import { Console } from 'console'
+import { Process } from '@virtualpatterns/mablung-process'
 import Sinon from 'sinon'
 import Test from 'ava'
-
-const Process = process
 
 Test('ConsoleDestination()', (test) => {
   test.notThrows(() => { new ConsoleDestination() })

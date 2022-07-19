@@ -1,21 +1,26 @@
+import { CreateRandomId } from '@virtualpatterns/mablung-worker/test'
 import { FileDestination } from '@virtualpatterns/mablung-log'
 import { FileSystem } from '@virtualpatterns/mablung-file-system'
-import Path from 'path'
+import { Path } from '@virtualpatterns/mablung-path'
+import { Process } from '@virtualpatterns/mablung-process'
 import Sinon from 'sinon'
 import Test from 'ava'
 
 const FilePath = __filePath
 
-const LogPath = FilePath.replace('/release/', '/data/').replace(/\.test\.c?js$/, '.log')
-
-const Process = process
+const DataPath = FilePath.replace('/release/', '/data/').replace(/\.test\.c?js/, '')
 
 Test.before(() => {
-  return FileSystem.ensureDir(Path.dirname(LogPath))
+  return FileSystem.emptyDir(DataPath)
 })
 
-Test.beforeEach(() => {
-  return FileSystem.remove(LogPath)
+Test.beforeEach(async (test) => {
+
+  let id = await CreateRandomId()
+  let logPath = Path.resolve(DataPath, `${id}.log`)
+
+  test.context.logPath = logPath
+
 })
 
 Test('FileDestination()', (test) => {
@@ -31,16 +36,16 @@ Test('FileDestination(Stream, { ... })', (test) => {
 })
 
 Test('FileDestination(\'...\')', (test) => {
-  return test.notThrowsAsync((new FileDestination(LogPath)).close())
+  return test.notThrowsAsync((new FileDestination(test.context.logPath)).close())
 })
 
 Test('FileDestination(\'...\', { ... })', (test) => {
-  return test.notThrowsAsync((new FileDestination(LogPath, {})).close())
+  return test.notThrowsAsync((new FileDestination(test.context.logPath, {})).close())
 })
 
 Test('write(\'trace\', \'...\') using \'...\', { ... }', async (test) => {
 
-  let destination = new FileDestination(LogPath, {})
+  let destination = new FileDestination(test.context.logPath, {})
 
   try {
     await test.notThrowsAsync(destination.write('trace', 'Hello, world!'))
@@ -52,7 +57,7 @@ Test('write(\'trace\', \'...\') using \'...\', { ... }', async (test) => {
 
 Test('write(\'trace\', \'...\') using \'...\', { ... } on false resolves on drain', async (test) => {
 
-  let destination = new FileDestination(LogPath, {})
+  let destination = new FileDestination(test.context.logPath, {})
 
   try {
 
@@ -76,7 +81,7 @@ Test('write(\'trace\', \'...\') using \'...\', { ... } on false resolves on erro
 
   test.plan(2)
 
-  let destination = new FileDestination(LogPath, {})
+  let destination = new FileDestination(test.context.logPath, {})
 
   try {
 
@@ -122,7 +127,7 @@ Test('rotate() using Stream, { ... } throws TypeError', (test) => {
 
 Test('rotate() using \'...\'', async (test) => {
 
-  let destination = new FileDestination(LogPath)
+  let destination = new FileDestination(test.context.logPath)
 
   try {
     await test.notThrowsAsync(destination.rotate())
@@ -134,7 +139,7 @@ Test('rotate() using \'...\'', async (test) => {
 
 Test('rotate() using \'...\', { ... }', async (test) => {
 
-  let destination = new FileDestination(LogPath, {})
+  let destination = new FileDestination(test.context.logPath, {})
 
   try {
     await test.notThrowsAsync(destination.rotate())
@@ -157,16 +162,16 @@ Test('close() using Stream, { ... } throws TypeError', (test) => {
 })
 
 Test('close() using \'...\'', (test) => {
-  return test.notThrowsAsync((new FileDestination(LogPath)).close())
+  return test.notThrowsAsync((new FileDestination(test.context.logPath)).close())
 })
 
 Test('close() using \'...\', { ... }', (test) => {
-  return test.notThrowsAsync((new FileDestination(LogPath, {})).close())
+  return test.notThrowsAsync((new FileDestination(test.context.logPath, {})).close())
 })
 
 Test('close() using \'...\', { ... } throws Error', async (test) => {
 
-  let destination = new FileDestination(LogPath, {})
+  let destination = new FileDestination(test.context.logPath, {})
 
   try {
 
@@ -188,7 +193,7 @@ Test('close() using \'...\', { ... } throws Error', async (test) => {
 
 // Test.only('...', async (test) => {
 
-//   let destination = new FileDestination(LogPath, {})
+//   let destination = new FileDestination(test.context.logPath, {})
 
 //   try {
 

@@ -8,6 +8,7 @@ Test('default', async (test) => {
 
   // test.log(dependency)
   test.deepEqual(dependency.missing, {})
+  test.deepEqual(dependency.section, {})
   test.deepEqual(dependency.unused, [])
 
 })

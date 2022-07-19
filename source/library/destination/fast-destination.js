@@ -1,10 +1,9 @@
 import { Configuration } from '@virtualpatterns/mablung-configuration'
 import { Is } from '@virtualpatterns/mablung-is'
+import { Process } from '@virtualpatterns/mablung-process'
 import Stream from 'sonic-boom'
 
 import { Destination } from '../destination.js'
-
-const Process = process
 
 class FastDestination extends Destination {
 
