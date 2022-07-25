@@ -18,13 +18,13 @@
   "type": "module",
   "version": "0.0.1-54",
   "dependencies": {
-    "@virtualpatterns/mablung-configuration": "0.0.2-57",
+    "@virtualpatterns/mablung-configuration": "0.0.2-59",
     "@virtualpatterns/mablung-file-system": "0.0.2-30",
     "@virtualpatterns/mablung-is": "0.0.1-67",
     "@virtualpatterns/mablung-process": "^0.0.2-60",
     "luxon": "^3.0.1",
     "p-queue": "^7.2.0",
-    "sonic-boom": "^3.0.0"
+    "sonic-boom": "^3.1.0"
   },
   "devDependencies": {
     "@virtualpatterns/babel-preset-mablung-makefile-environment": "0.0.26-37",
@@ -33,7 +33,7 @@
     "@virtualpatterns/mablung-makefile-environment": "0.0.26-89",
     "@virtualpatterns/mablung-path": "^0.0.2-55",
     "@virtualpatterns/mablung-source-map-support": "0.0.26-81",
-    "@virtualpatterns/mablung-worker": "0.0.2-131",
+    "@virtualpatterns/mablung-worker": "0.0.2-133",
     "ava": "^4.3.1",
     "sinon": "^14.0.0"
   }
